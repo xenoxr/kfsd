@@ -68,6 +68,8 @@ export class MapLoader {
             };
 
             const myHeading = getLaneHeading(l.points);
+            const currentIsOut = l.id.endsWith('_out');
+            const currentIsIn = l.id.endsWith('_in');
 
             if (l.nextLanes) {
                 for (const nextId of l.nextLanes) {
@@ -76,8 +78,6 @@ export class MapLoader {
 
                     // 1. Basic Discipline: _in -> _in, _out -> _out
                     // This prevents changing between inner/outer loops or lanes implicitly
-                    const currentIsOut = l.id.endsWith('_out');
-                    const currentIsIn = l.id.endsWith('_in');
                     const nextIsOut = nextId.endsWith('_out');
                     const nextIsIn = nextId.endsWith('_in');
 
@@ -103,6 +103,22 @@ export class MapLoader {
                         // Rule: Outer Lane (_out) cannot turn Left (crosses Inner lane)
                         if (currentIsOut && isLeftTurn) continue;
                     }
+
+                    validNextLanes.push(nextId);
+                }
+            }
+
+            // If every candidate got filtered (e.g., outer lane needs a left turn to avoid a dead-end),
+            // fall back to the original connections that at least keep in/out discipline.
+            if (validNextLanes.length === 0 && l.nextLanes && l.nextLanes.length > 0) {
+                for (const nextId of l.nextLanes) {
+                    const nextLaneData = laneDataMap.get(nextId);
+                    if (!nextLaneData) continue;
+
+                    const nextIsOut = nextId.endsWith('_out');
+                    const nextIsIn = nextId.endsWith('_in');
+                    if (currentIsOut && !nextIsOut) continue;
+                    if (currentIsIn && !nextIsIn) continue;
 
                     validNextLanes.push(nextId);
                 }

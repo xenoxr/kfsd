@@ -279,7 +279,8 @@ export class Vehicle extends Entity {
                         }
                     }
                 } else {
-                    this.log(`SignalPass: ${intersection.id} ${TrafficLightState[state] || state} ${LaneLabeler.format(world, this.currentLaneId)}`);
+                    const stateLabel = state === undefined ? 'N/A' : TrafficLightState[state];
+                    this.log(`SignalPass: ${intersection.id} ${stateLabel} ${LaneLabeler.format(world, this.currentLaneId)}`);
                 }
             }
         }
