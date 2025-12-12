@@ -1,0 +1,1863 @@
+{
+    "lanes": [
+        {
+            "id": "outer_north_out",
+            "points": [
+                {
+                    "x": 80,
+                    "y": 165
+                },
+                {
+                    "x": 920,
+                    "y": 165
+                }
+            ],
+            "width": 30,
+            "nextLanes": [
+                "outer_east_out"
+            ],
+            "speedLimit": 200
+        },
+        {
+            "id": "outer_north_in",
+            "points": [
+                {
+                    "x": 80,
+                    "y": 195
+                },
+                {
+                    "x": 920,
+                    "y": 195
+                }
+            ],
+            "width": 30,
+            "nextLanes": [
+                "outer_east_in"
+            ],
+            "speedLimit": 200
+        },
+        {
+            "id": "outer_east_out",
+            "points": [
+                {
+                    "x": 935,
+                    "y": 180
+                },
+                {
+                    "x": 935,
+                    "y": 520
+                }
+            ],
+            "width": 30,
+            "nextLanes": [
+                "outer_south_out"
+            ],
+            "speedLimit": 200
+        },
+        {
+            "id": "outer_east_in",
+            "points": [
+                {
+                    "x": 905,
+                    "y": 180
+                },
+                {
+                    "x": 905,
+                    "y": 520
+                }
+            ],
+            "width": 30,
+            "nextLanes": [
+                "outer_south_in"
+            ],
+            "speedLimit": 200
+        },
+        {
+            "id": "outer_south_out",
+            "points": [
+                {
+                    "x": 920,
+                    "y": 535
+                },
+                {
+                    "x": 80,
+                    "y": 535
+                }
+            ],
+            "width": 30,
+            "nextLanes": [
+                "outer_west_out"
+            ],
+            "speedLimit": 200
+        },
+        {
+            "id": "outer_south_in",
+            "points": [
+                {
+                    "x": 920,
+                    "y": 505
+                },
+                {
+                    "x": 80,
+                    "y": 505
+                }
+            ],
+            "width": 30,
+            "nextLanes": [
+                "outer_west_in"
+            ],
+            "speedLimit": 200
+        },
+        {
+            "id": "outer_west_out",
+            "points": [
+                {
+                    "x": 65,
+                    "y": 520
+                },
+                {
+                    "x": 65,
+                    "y": 180
+                }
+            ],
+            "width": 30,
+            "nextLanes": [
+                "outer_north_out"
+            ],
+            "speedLimit": 200
+        },
+        {
+            "id": "outer_west_in",
+            "points": [
+                {
+                    "x": 95,
+                    "y": 520
+                },
+                {
+                    "x": 95,
+                    "y": 180
+                }
+            ],
+            "width": 30,
+            "nextLanes": [
+                "outer_north_in"
+            ],
+            "speedLimit": 200
+        },
+        {
+            "id": "main_e1_out",
+            "points": [
+                {
+                    "x": 120,
+                    "y": 395
+                },
+                {
+                    "x": 320,
+                    "y": 395
+                }
+            ],
+            "width": 30,
+            "nextLanes": [
+                "main_e2_out"
+            ],
+            "speedLimit": 160
+        },
+        {
+            "id": "main_e1_in",
+            "points": [
+                {
+                    "x": 120,
+                    "y": 365
+                },
+                {
+                    "x": 320,
+                    "y": 365
+                }
+            ],
+            "width": 30,
+            "nextLanes": [
+                "main_e2_in"
+            ],
+            "speedLimit": 160
+        },
+        {
+            "id": "main_e2_out",
+            "points": [
+                {
+                    "x": 320,
+                    "y": 395
+                },
+                {
+                    "x": 680,
+                    "y": 395
+                }
+            ],
+            "width": 30,
+            "nextLanes": [
+                "main_e3_out"
+            ],
+            "speedLimit": 160
+        },
+        {
+            "id": "main_e2_in",
+            "points": [
+                {
+                    "x": 320,
+                    "y": 365
+                },
+                {
+                    "x": 680,
+                    "y": 365
+                }
+            ],
+            "width": 30,
+            "nextLanes": [
+                "main_e3_in"
+            ],
+            "speedLimit": 160
+        },
+        {
+            "id": "main_e3_out",
+            "points": [
+                {
+                    "x": 680,
+                    "y": 395
+                },
+                {
+                    "x": 880,
+                    "y": 395
+                }
+            ],
+            "width": 30,
+            "nextLanes": [
+                "outer_east_out",
+                "outer_east_in"
+            ],
+            "speedLimit": 160
+        },
+        {
+            "id": "main_e3_in",
+            "points": [
+                {
+                    "x": 680,
+                    "y": 365
+                },
+                {
+                    "x": 880,
+                    "y": 365
+                }
+            ],
+            "width": 30,
+            "nextLanes": [
+                "outer_east_out",
+                "outer_east_in"
+            ],
+            "speedLimit": 160
+        },
+        {
+            "id": "main_w3_out",
+            "points": [
+                {
+                    "x": 880,
+                    "y": 305
+                },
+                {
+                    "x": 680,
+                    "y": 305
+                }
+            ],
+            "width": 30,
+            "nextLanes": [
+                "main_w2_out"
+            ],
+            "speedLimit": 160
+        },
+        {
+            "id": "main_w3_in",
+            "points": [
+                {
+                    "x": 880,
+                    "y": 335
+                },
+                {
+                    "x": 680,
+                    "y": 335
+                }
+            ],
+            "width": 30,
+            "nextLanes": [
+                "main_w2_in"
+            ],
+            "speedLimit": 160
+        },
+        {
+            "id": "main_w2_out",
+            "points": [
+                {
+                    "x": 680,
+                    "y": 305
+                },
+                {
+                    "x": 320,
+                    "y": 305
+                }
+            ],
+            "width": 30,
+            "nextLanes": [
+                "main_w1_out"
+            ],
+            "speedLimit": 160
+        },
+        {
+            "id": "main_w2_in",
+            "points": [
+                {
+                    "x": 680,
+                    "y": 335
+                },
+                {
+                    "x": 320,
+                    "y": 335
+                }
+            ],
+            "width": 30,
+            "nextLanes": [
+                "main_w1_in"
+            ],
+            "speedLimit": 160
+        },
+        {
+            "id": "main_w1_out",
+            "points": [
+                {
+                    "x": 320,
+                    "y": 305
+                },
+                {
+                    "x": 120,
+                    "y": 305
+                }
+            ],
+            "width": 30,
+            "nextLanes": [
+                "outer_west_out",
+                "outer_west_in"
+            ],
+            "speedLimit": 160
+        },
+        {
+            "id": "main_w1_in",
+            "points": [
+                {
+                    "x": 320,
+                    "y": 335
+                },
+                {
+                    "x": 120,
+                    "y": 335
+                }
+            ],
+            "width": 30,
+            "nextLanes": [
+                "outer_west_out",
+                "outer_west_in"
+            ],
+            "speedLimit": 160
+        },
+        {
+            "id": "southbound_left_top_out",
+            "points": [
+                {
+                    "x": 365,
+                    "y": 180
+                },
+                {
+                    "x": 365,
+                    "y": 290
+                }
+            ],
+            "width": 30,
+            "nextLanes": [
+                "southbound_left_mid_out"
+            ],
+            "speedLimit": 140
+        },
+        {
+            "id": "southbound_left_top_in",
+            "points": [
+                {
+                    "x": 335,
+                    "y": 180
+                },
+                {
+                    "x": 335,
+                    "y": 290
+                }
+            ],
+            "width": 30,
+            "nextLanes": [
+                "southbound_left_mid_in"
+            ],
+            "speedLimit": 140
+        },
+        {
+            "id": "southbound_left_mid_out",
+            "points": [
+                {
+                    "x": 365,
+                    "y": 410
+                },
+                {
+                    "x": 365,
+                    "y": 520
+                }
+            ],
+            "width": 30,
+            "nextLanes": [
+                "outer_south_out",
+                "outer_south_in"
+            ],
+            "speedLimit": 140
+        },
+        {
+            "id": "southbound_left_mid_in",
+            "points": [
+                {
+                    "x": 335,
+                    "y": 410
+                },
+                {
+                    "x": 335,
+                    "y": 520
+                }
+            ],
+            "width": 30,
+            "nextLanes": [
+                "outer_south_out",
+                "outer_south_in"
+            ],
+            "speedLimit": 140
+        },
+        {
+            "id": "northbound_left_bottom_out",
+            "points": [
+                {
+                    "x": 275,
+                    "y": 520
+                },
+                {
+                    "x": 275,
+                    "y": 410
+                }
+            ],
+            "width": 30,
+            "nextLanes": [
+                "northbound_left_top_out"
+            ],
+            "speedLimit": 140
+        },
+        {
+            "id": "northbound_left_bottom_in",
+            "points": [
+                {
+                    "x": 305,
+                    "y": 520
+                },
+                {
+                    "x": 305,
+                    "y": 410
+                }
+            ],
+            "width": 30,
+            "nextLanes": [
+                "northbound_left_top_in"
+            ],
+            "speedLimit": 140
+        },
+        {
+            "id": "northbound_left_top_out",
+            "points": [
+                {
+                    "x": 275,
+                    "y": 290
+                },
+                {
+                    "x": 275,
+                    "y": 180
+                }
+            ],
+            "width": 30,
+            "nextLanes": [
+                "outer_north_out",
+                "outer_north_in"
+            ],
+            "speedLimit": 140
+        },
+        {
+            "id": "northbound_left_top_in",
+            "points": [
+                {
+                    "x": 305,
+                    "y": 290
+                },
+                {
+                    "x": 305,
+                    "y": 180
+                }
+            ],
+            "width": 30,
+            "nextLanes": [
+                "outer_north_out",
+                "outer_north_in"
+            ],
+            "speedLimit": 140
+        },
+        {
+            "id": "southbound_right_top_out",
+            "points": [
+                {
+                    "x": 725,
+                    "y": 180
+                },
+                {
+                    "x": 725,
+                    "y": 290
+                }
+            ],
+            "width": 30,
+            "nextLanes": [
+                "southbound_right_mid_out"
+            ],
+            "speedLimit": 140
+        },
+        {
+            "id": "southbound_right_top_in",
+            "points": [
+                {
+                    "x": 695,
+                    "y": 180
+                },
+                {
+                    "x": 695,
+                    "y": 290
+                }
+            ],
+            "width": 30,
+            "nextLanes": [
+                "southbound_right_mid_in"
+            ],
+            "speedLimit": 140
+        },
+        {
+            "id": "southbound_right_mid_out",
+            "points": [
+                {
+                    "x": 725,
+                    "y": 410
+                },
+                {
+                    "x": 725,
+                    "y": 520
+                }
+            ],
+            "width": 30,
+            "nextLanes": [
+                "outer_south_out",
+                "outer_south_in"
+            ],
+            "speedLimit": 140
+        },
+        {
+            "id": "southbound_right_mid_in",
+            "points": [
+                {
+                    "x": 695,
+                    "y": 410
+                },
+                {
+                    "x": 695,
+                    "y": 520
+                }
+            ],
+            "width": 30,
+            "nextLanes": [
+                "outer_south_out",
+                "outer_south_in"
+            ],
+            "speedLimit": 140
+        },
+        {
+            "id": "northbound_right_bottom_out",
+            "points": [
+                {
+                    "x": 635,
+                    "y": 520
+                },
+                {
+                    "x": 635,
+                    "y": 410
+                }
+            ],
+            "width": 30,
+            "nextLanes": [
+                "northbound_right_top_out"
+            ],
+            "speedLimit": 140
+        },
+        {
+            "id": "northbound_right_bottom_in",
+            "points": [
+                {
+                    "x": 665,
+                    "y": 520
+                },
+                {
+                    "x": 665,
+                    "y": 410
+                }
+            ],
+            "width": 30,
+            "nextLanes": [
+                "northbound_right_top_in"
+            ],
+            "speedLimit": 140
+        },
+        {
+            "id": "northbound_right_top_out",
+            "points": [
+                {
+                    "x": 635,
+                    "y": 290
+                },
+                {
+                    "x": 635,
+                    "y": 180
+                }
+            ],
+            "width": 30,
+            "nextLanes": [
+                "outer_north_out",
+                "outer_north_in"
+            ],
+            "speedLimit": 140
+        },
+        {
+            "id": "northbound_right_top_in",
+            "points": [
+                {
+                    "x": 665,
+                    "y": 290
+                },
+                {
+                    "x": 665,
+                    "y": 180
+                }
+            ],
+            "width": 30,
+            "nextLanes": [
+                "outer_north_out",
+                "outer_north_in"
+            ],
+            "speedLimit": 140
+        }
+    ],
+    "intersections": [
+        {
+            "id": "i_outer_ne",
+            "center": {
+                "x": 920,
+                "y": 180
+            },
+            "lanes": [
+                "outer_north_out",
+                "outer_north_in",
+                "outer_east_out",
+                "outer_east_in"
+            ]
+        },
+        {
+            "id": "i_outer_se",
+            "center": {
+                "x": 920,
+                "y": 520
+            },
+            "lanes": [
+                "outer_east_out",
+                "outer_east_in",
+                "outer_south_out",
+                "outer_south_in"
+            ]
+        },
+        {
+            "id": "i_outer_sw",
+            "center": {
+                "x": 80,
+                "y": 520
+            },
+            "lanes": [
+                "outer_south_out",
+                "outer_south_in",
+                "outer_west_out",
+                "outer_west_in"
+            ]
+        },
+        {
+            "id": "i_outer_nw",
+            "center": {
+                "x": 80,
+                "y": 180
+            },
+            "lanes": [
+                "outer_west_out",
+                "outer_west_in",
+                "outer_north_out",
+                "outer_north_in"
+            ]
+        },
+        {
+            "id": "i_cross_west",
+            "center": {
+                "x": 320,
+                "y": 350
+            },
+            "lanes": [
+                "main_e1_out",
+                "main_e2_out",
+                "main_e1_in",
+                "main_e2_in",
+                "main_w2_out",
+                "main_w1_out",
+                "main_w2_in",
+                "main_w1_in",
+                "southbound_left_top_out",
+                "southbound_left_top_in",
+                "southbound_left_mid_out",
+                "southbound_left_mid_in",
+                "northbound_left_bottom_out",
+                "northbound_left_bottom_in",
+                "northbound_left_top_out",
+                "northbound_left_top_in"
+            ]
+        },
+        {
+            "id": "i_cross_east",
+            "center": {
+                "x": 680,
+                "y": 350
+            },
+            "lanes": [
+                "main_e2_out",
+                "main_e3_out",
+                "main_e2_in",
+                "main_e3_in",
+                "main_w3_out",
+                "main_w2_out",
+                "main_w3_in",
+                "main_w2_in",
+                "southbound_right_top_out",
+                "southbound_right_top_in",
+                "southbound_right_mid_out",
+                "southbound_right_mid_in",
+                "northbound_right_bottom_out",
+                "northbound_right_bottom_in",
+                "northbound_right_top_out",
+                "northbound_right_top_in"
+            ]
+        }
+    ],
+    "crosswalks": [
+        {
+            "id": "cw_west_n",
+            "x": 320,
+            "y": 290,
+            "width": 120,
+            "height": 40,
+            "intersectionId": "i_cross_west"
+        },
+        {
+            "id": "cw_west_s",
+            "x": 320,
+            "y": 415,
+            "width": 120,
+            "height": 40,
+            "intersectionId": "i_cross_west"
+        },
+        {
+            "id": "cw_west_w",
+            "x": 260,
+            "y": 350,
+            "width": 40,
+            "height": 120,
+            "intersectionId": "i_cross_west"
+        },
+        {
+            "id": "cw_west_e",
+            "x": 380,
+            "y": 350,
+            "width": 40,
+            "height": 120,
+            "intersectionId": "i_cross_west"
+        },
+        {
+            "id": "cw_east_n",
+            "x": 680,
+            "y": 290,
+            "width": 120,
+            "height": 40,
+            "intersectionId": "i_cross_east"
+        },
+        {
+            "id": "cw_east_s",
+            "x": 680,
+            "y": 415,
+            "width": 120,
+            "height": 40,
+            "intersectionId": "i_cross_east"
+        },
+        {
+            "id": "cw_east_w",
+            "x": 620,
+            "y": 350,
+            "width": 40,
+            "height": 120,
+            "intersectionId": "i_cross_east"
+        },
+        {
+            "id": "cw_east_e",
+            "x": 740,
+            "y": 350,
+            "width": 40,
+            "height": 120,
+            "intersectionId": "i_cross_east"
+        }
+    ],
+    "markings": [
+        {
+            "points": [
+                {
+                    "x": 120,
+                    "y": 350
+                },
+                {
+                    "x": 290,
+                    "y": 350
+                }
+            ],
+            "style": "double-solid",
+            "color": "yellow",
+            "width": 4
+        },
+        {
+            "points": [
+                {
+                    "x": 350,
+                    "y": 350
+                },
+                {
+                    "x": 650,
+                    "y": 350
+                }
+            ],
+            "style": "double-solid",
+            "color": "yellow",
+            "width": 4
+        },
+        {
+            "points": [
+                {
+                    "x": 710,
+                    "y": 350
+                },
+                {
+                    "x": 880,
+                    "y": 350
+                }
+            ],
+            "style": "double-solid",
+            "color": "yellow",
+            "width": 4
+        },
+        {
+            "points": [
+                {
+                    "x": 120,
+                    "y": 320
+                },
+                {
+                    "x": 290,
+                    "y": 320
+                }
+            ],
+            "style": "dashed",
+            "color": "white",
+            "width": 2
+        },
+        {
+            "points": [
+                {
+                    "x": 350,
+                    "y": 320
+                },
+                {
+                    "x": 650,
+                    "y": 320
+                }
+            ],
+            "style": "dashed",
+            "color": "white",
+            "width": 2
+        },
+        {
+            "points": [
+                {
+                    "x": 710,
+                    "y": 320
+                },
+                {
+                    "x": 880,
+                    "y": 320
+                }
+            ],
+            "style": "dashed",
+            "color": "white",
+            "width": 2
+        },
+        {
+            "points": [
+                {
+                    "x": 120,
+                    "y": 380
+                },
+                {
+                    "x": 290,
+                    "y": 380
+                }
+            ],
+            "style": "dashed",
+            "color": "white",
+            "width": 2
+        },
+        {
+            "points": [
+                {
+                    "x": 350,
+                    "y": 380
+                },
+                {
+                    "x": 650,
+                    "y": 380
+                }
+            ],
+            "style": "dashed",
+            "color": "white",
+            "width": 2
+        },
+        {
+            "points": [
+                {
+                    "x": 710,
+                    "y": 380
+                },
+                {
+                    "x": 880,
+                    "y": 380
+                }
+            ],
+            "style": "dashed",
+            "color": "white",
+            "width": 2
+        },
+        {
+            "points": [
+                {
+                    "x": 320,
+                    "y": 180
+                },
+                {
+                    "x": 320,
+                    "y": 270
+                }
+            ],
+            "style": "double-solid",
+            "color": "yellow",
+            "width": 4
+        },
+        {
+            "points": [
+                {
+                    "x": 320,
+                    "y": 430
+                },
+                {
+                    "x": 320,
+                    "y": 520
+                }
+            ],
+            "style": "double-solid",
+            "color": "yellow",
+            "width": 4
+        },
+        {
+            "points": [
+                {
+                    "x": 680,
+                    "y": 180
+                },
+                {
+                    "x": 680,
+                    "y": 270
+                }
+            ],
+            "style": "double-solid",
+            "color": "yellow",
+            "width": 4
+        },
+        {
+            "points": [
+                {
+                    "x": 680,
+                    "y": 430
+                },
+                {
+                    "x": 680,
+                    "y": 520
+                }
+            ],
+            "style": "double-solid",
+            "color": "yellow",
+            "width": 4
+        },
+        {
+            "points": [
+                {
+                    "x": 290,
+                    "y": 180
+                },
+                {
+                    "x": 290,
+                    "y": 270
+                }
+            ],
+            "style": "dashed",
+            "color": "white",
+            "width": 2
+        },
+        {
+            "points": [
+                {
+                    "x": 290,
+                    "y": 430
+                },
+                {
+                    "x": 290,
+                    "y": 520
+                }
+            ],
+            "style": "dashed",
+            "color": "white",
+            "width": 2
+        },
+        {
+            "points": [
+                {
+                    "x": 350,
+                    "y": 180
+                },
+                {
+                    "x": 350,
+                    "y": 270
+                }
+            ],
+            "style": "dashed",
+            "color": "white",
+            "width": 2
+        },
+        {
+            "points": [
+                {
+                    "x": 350,
+                    "y": 430
+                },
+                {
+                    "x": 350,
+                    "y": 520
+                }
+            ],
+            "style": "dashed",
+            "color": "white",
+            "width": 2
+        },
+        {
+            "points": [
+                {
+                    "x": 650,
+                    "y": 180
+                },
+                {
+                    "x": 650,
+                    "y": 270
+                }
+            ],
+            "style": "dashed",
+            "color": "white",
+            "width": 2
+        },
+        {
+            "points": [
+                {
+                    "x": 650,
+                    "y": 430
+                },
+                {
+                    "x": 650,
+                    "y": 520
+                }
+            ],
+            "style": "dashed",
+            "color": "white",
+            "width": 2
+        },
+        {
+            "points": [
+                {
+                    "x": 710,
+                    "y": 180
+                },
+                {
+                    "x": 710,
+                    "y": 270
+                }
+            ],
+            "style": "dashed",
+            "color": "white",
+            "width": 2
+        },
+        {
+            "points": [
+                {
+                    "x": 710,
+                    "y": 430
+                },
+                {
+                    "x": 710,
+                    "y": 520
+                }
+            ],
+            "style": "dashed",
+            "color": "white",
+            "width": 2
+        },
+        {
+            "points": [
+                {
+                    "x": 80,
+                    "y": 180
+                },
+                {
+                    "x": 280,
+                    "y": 180
+                }
+            ],
+            "style": "double-solid",
+            "color": "yellow",
+            "width": 4
+        },
+        {
+            "points": [
+                {
+                    "x": 360,
+                    "y": 180
+                },
+                {
+                    "x": 640,
+                    "y": 180
+                }
+            ],
+            "style": "double-solid",
+            "color": "yellow",
+            "width": 4
+        },
+        {
+            "points": [
+                {
+                    "x": 720,
+                    "y": 180
+                },
+                {
+                    "x": 920,
+                    "y": 180
+                }
+            ],
+            "style": "double-solid",
+            "color": "yellow",
+            "width": 4
+        },
+        {
+            "points": [
+                {
+                    "x": 80,
+                    "y": 520
+                },
+                {
+                    "x": 280,
+                    "y": 520
+                }
+            ],
+            "style": "double-solid",
+            "color": "yellow",
+            "width": 4
+        },
+        {
+            "points": [
+                {
+                    "x": 360,
+                    "y": 520
+                },
+                {
+                    "x": 640,
+                    "y": 520
+                }
+            ],
+            "style": "double-solid",
+            "color": "yellow",
+            "width": 4
+        },
+        {
+            "points": [
+                {
+                    "x": 720,
+                    "y": 520
+                },
+                {
+                    "x": 920,
+                    "y": 520
+                }
+            ],
+            "style": "double-solid",
+            "color": "yellow",
+            "width": 4
+        },
+        {
+            "points": [
+                {
+                    "x": 80,
+                    "y": 180
+                },
+                {
+                    "x": 80,
+                    "y": 520
+                }
+            ],
+            "style": "double-solid",
+            "color": "yellow",
+            "width": 4
+        },
+        {
+            "points": [
+                {
+                    "x": 920,
+                    "y": 180
+                },
+                {
+                    "x": 920,
+                    "y": 520
+                }
+            ],
+            "style": "double-solid",
+            "color": "yellow",
+            "width": 4
+        }
+    ],
+    "sidewalks": [
+        {
+            "id": "sw_outer_top",
+            "points": [
+                {
+                    "x": 40,
+                    "y": 140
+                },
+                {
+                    "x": 260,
+                    "y": 140
+                },
+                {
+                    "x": 380,
+                    "y": 140
+                },
+                {
+                    "x": 620,
+                    "y": 140
+                },
+                {
+                    "x": 740,
+                    "y": 140
+                },
+                {
+                    "x": 960,
+                    "y": 140
+                }
+            ],
+            "width": 20,
+            "connectedCrosswalks": [
+                "cw_nw",
+                "cw_ne"
+            ]
+        },
+        {
+            "id": "sw_outer_bottom",
+            "points": [
+                {
+                    "x": 40,
+                    "y": 560
+                },
+                {
+                    "x": 260,
+                    "y": 560
+                },
+                {
+                    "x": 380,
+                    "y": 560
+                },
+                {
+                    "x": 620,
+                    "y": 560
+                },
+                {
+                    "x": 740,
+                    "y": 560
+                },
+                {
+                    "x": 960,
+                    "y": 560
+                }
+            ],
+            "width": 20,
+            "connectedCrosswalks": [
+                "cw_sw",
+                "cw_se"
+            ]
+        },
+        {
+            "id": "sw_outer_left",
+            "points": [
+                {
+                    "x": 40,
+                    "y": 140
+                },
+                {
+                    "x": 40,
+                    "y": 280
+                },
+                {
+                    "x": 40,
+                    "y": 420
+                },
+                {
+                    "x": 40,
+                    "y": 560
+                }
+            ],
+            "width": 20,
+            "connectedCrosswalks": [
+                "cw_nw",
+                "cw_sw"
+            ]
+        },
+        {
+            "id": "sw_outer_right",
+            "points": [
+                {
+                    "x": 960,
+                    "y": 140
+                },
+                {
+                    "x": 960,
+                    "y": 280
+                },
+                {
+                    "x": 960,
+                    "y": 420
+                },
+                {
+                    "x": 960,
+                    "y": 560
+                }
+            ],
+            "width": 20,
+            "connectedCrosswalks": [
+                "cw_ne",
+                "cw_se"
+            ]
+        },
+        {
+            "id": "sw_west_inter_top",
+            "points": [
+                {
+                    "x": 260,
+                    "y": 270
+                },
+                {
+                    "x": 380,
+                    "y": 270
+                }
+            ],
+            "width": 16,
+            "connectedCrosswalks": [
+                "cw_west_n",
+                "cw_west_w",
+                "cw_west_e"
+            ]
+        },
+        {
+            "id": "sw_west_inter_bottom",
+            "points": [
+                {
+                    "x": 260,
+                    "y": 435
+                },
+                {
+                    "x": 380,
+                    "y": 435
+                }
+            ],
+            "width": 16,
+            "connectedCrosswalks": [
+                "cw_west_s",
+                "cw_west_w",
+                "cw_west_e"
+            ]
+        },
+        {
+            "id": "sw_west_inter_left",
+            "points": [
+                {
+                    "x": 240,
+                    "y": 270
+                },
+                {
+                    "x": 240,
+                    "y": 350
+                },
+                {
+                    "x": 240,
+                    "y": 435
+                }
+            ],
+            "width": 16,
+            "connectedCrosswalks": [
+                "cw_west_w"
+            ]
+        },
+        {
+            "id": "sw_west_inter_right",
+            "points": [
+                {
+                    "x": 400,
+                    "y": 270
+                },
+                {
+                    "x": 400,
+                    "y": 350
+                },
+                {
+                    "x": 400,
+                    "y": 435
+                }
+            ],
+            "width": 16,
+            "connectedCrosswalks": [
+                "cw_west_e"
+            ]
+        },
+        {
+            "id": "sw_east_inter_top",
+            "points": [
+                {
+                    "x": 600,
+                    "y": 270
+                },
+                {
+                    "x": 760,
+                    "y": 270
+                }
+            ],
+            "width": 16,
+            "connectedCrosswalks": [
+                "cw_east_n",
+                "cw_east_w",
+                "cw_east_e"
+            ]
+        },
+        {
+            "id": "sw_east_inter_bottom",
+            "points": [
+                {
+                    "x": 600,
+                    "y": 435
+                },
+                {
+                    "x": 760,
+                    "y": 435
+                }
+            ],
+            "width": 16,
+            "connectedCrosswalks": [
+                "cw_east_s",
+                "cw_east_w",
+                "cw_east_e"
+            ]
+        },
+        {
+            "id": "sw_east_inter_left",
+            "points": [
+                {
+                    "x": 600,
+                    "y": 270
+                },
+                {
+                    "x": 600,
+                    "y": 350
+                },
+                {
+                    "x": 600,
+                    "y": 435
+                }
+            ],
+            "width": 16,
+            "connectedCrosswalks": [
+                "cw_east_w"
+            ]
+        },
+        {
+            "id": "sw_east_inter_right",
+            "points": [
+                {
+                    "x": 760,
+                    "y": 270
+                },
+                {
+                    "x": 760,
+                    "y": 350
+                },
+                {
+                    "x": 760,
+                    "y": 435
+                }
+            ],
+            "width": 16,
+            "connectedCrosswalks": [
+                "cw_east_e"
+            ]
+        },
+        {
+            "id": "sw_left_vertical_top",
+            "points": [
+                {
+                    "x": 260,
+                    "y": 140
+                },
+                {
+                    "x": 260,
+                    "y": 270
+                }
+            ],
+            "width": 16,
+            "connectedCrosswalks": []
+        },
+        {
+            "id": "sw_left_vertical_bottom",
+            "points": [
+                {
+                    "x": 260,
+                    "y": 435
+                },
+                {
+                    "x": 260,
+                    "y": 560
+                }
+            ],
+            "width": 16,
+            "connectedCrosswalks": []
+        },
+        {
+            "id": "sw_left_vertical_right_top",
+            "points": [
+                {
+                    "x": 380,
+                    "y": 140
+                },
+                {
+                    "x": 380,
+                    "y": 270
+                }
+            ],
+            "width": 16,
+            "connectedCrosswalks": []
+        },
+        {
+            "id": "sw_left_vertical_right_bottom",
+            "points": [
+                {
+                    "x": 380,
+                    "y": 435
+                },
+                {
+                    "x": 380,
+                    "y": 560
+                }
+            ],
+            "width": 16,
+            "connectedCrosswalks": []
+        },
+        {
+            "id": "sw_right_vertical_top",
+            "points": [
+                {
+                    "x": 620,
+                    "y": 140
+                },
+                {
+                    "x": 620,
+                    "y": 270
+                }
+            ],
+            "width": 16,
+            "connectedCrosswalks": []
+        },
+        {
+            "id": "sw_right_vertical_bottom",
+            "points": [
+                {
+                    "x": 620,
+                    "y": 435
+                },
+                {
+                    "x": 620,
+                    "y": 560
+                }
+            ],
+            "width": 16,
+            "connectedCrosswalks": []
+        },
+        {
+            "id": "sw_right_vertical_right_top",
+            "points": [
+                {
+                    "x": 740,
+                    "y": 140
+                },
+                {
+                    "x": 740,
+                    "y": 270
+                }
+            ],
+            "width": 16,
+            "connectedCrosswalks": []
+        },
+        {
+            "id": "sw_right_vertical_right_bottom",
+            "points": [
+                {
+                    "x": 740,
+                    "y": 435
+                },
+                {
+                    "x": 740,
+                    "y": 560
+                }
+            ],
+            "width": 16,
+            "connectedCrosswalks": []
+        },
+        {
+            "id": "sw_middle_horizontal_top",
+            "points": [
+                {
+                    "x": 400,
+                    "y": 270
+                },
+                {
+                    "x": 500,
+                    "y": 270
+                },
+                {
+                    "x": 600,
+                    "y": 270
+                }
+            ],
+            "width": 16,
+            "connectedCrosswalks": []
+        },
+        {
+            "id": "sw_middle_horizontal_bottom",
+            "points": [
+                {
+                    "x": 400,
+                    "y": 435
+                },
+                {
+                    "x": 500,
+                    "y": 435
+                },
+                {
+                    "x": 600,
+                    "y": 435
+                }
+            ],
+            "width": 16,
+            "connectedCrosswalks": []
+        },
+        {
+            "id": "sw_main_road_north_left",
+            "points": [
+                {
+                    "x": 40,
+                    "y": 270
+                },
+                {
+                    "x": 120,
+                    "y": 270
+                },
+                {
+                    "x": 240,
+                    "y": 270
+                }
+            ],
+            "width": 16,
+            "connectedCrosswalks": []
+        },
+        {
+            "id": "sw_main_road_south_left",
+            "points": [
+                {
+                    "x": 40,
+                    "y": 435
+                },
+                {
+                    "x": 120,
+                    "y": 435
+                },
+                {
+                    "x": 240,
+                    "y": 435
+                }
+            ],
+            "width": 16,
+            "connectedCrosswalks": []
+        },
+        {
+            "id": "sw_main_road_north_right",
+            "points": [
+                {
+                    "x": 760,
+                    "y": 270
+                },
+                {
+                    "x": 880,
+                    "y": 270
+                },
+                {
+                    "x": 960,
+                    "y": 270
+                }
+            ],
+            "width": 16,
+            "connectedCrosswalks": []
+        },
+        {
+            "id": "sw_main_road_south_right",
+            "points": [
+                {
+                    "x": 760,
+                    "y": 435
+                },
+                {
+                    "x": 880,
+                    "y": 435
+                },
+                {
+                    "x": 960,
+                    "y": 435
+                }
+            ],
+            "width": 16,
+            "connectedCrosswalks": []
+        },
+        {
+            "id": "sw_outer_inner_left_top",
+            "points": [
+                {
+                    "x": 120,
+                    "y": 140
+                },
+                {
+                    "x": 120,
+                    "y": 200
+                },
+                {
+                    "x": 120,
+                    "y": 270
+                }
+            ],
+            "width": 16,
+            "connectedCrosswalks": []
+        },
+        {
+            "id": "sw_outer_inner_left_bottom",
+            "points": [
+                {
+                    "x": 120,
+                    "y": 435
+                },
+                {
+                    "x": 120,
+                    "y": 500
+                },
+                {
+                    "x": 120,
+                    "y": 560
+                }
+            ],
+            "width": 16,
+            "connectedCrosswalks": []
+        },
+        {
+            "id": "sw_outer_inner_right_top",
+            "points": [
+                {
+                    "x": 880,
+                    "y": 140
+                },
+                {
+                    "x": 880,
+                    "y": 200
+                },
+                {
+                    "x": 880,
+                    "y": 270
+                }
+            ],
+            "width": 16,
+            "connectedCrosswalks": []
+        },
+        {
+            "id": "sw_outer_inner_right_bottom",
+            "points": [
+                {
+                    "x": 880,
+                    "y": 435
+                },
+                {
+                    "x": 880,
+                    "y": 500
+                },
+                {
+                    "x": 880,
+                    "y": 560
+                }
+            ],
+            "width": 16,
+            "connectedCrosswalks": []
+        }
+    ]
+}
