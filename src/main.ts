@@ -51,10 +51,10 @@ async function main() {
     npc5.currentLaneId = 'main_w1_out';
     world.vehicles.push(npc5);
 
-    // Spawn NPC on right vertical connector heading North (intentionally opposite for scenario)
+    // Spawn NPC on right vertical connector heading North
     const npc3 = new Vehicle(695, 450, 20, 10, 'car');
     npc3.heading = -Math.PI / 2; // North
-    npc3.currentLaneId = 'southbound_right_mid_in';
+    npc3.currentLaneId = 'northbound_right_bottom_in';
     world.vehicles.push(npc3);
 
     // Spawn Pedestrians on Sidewalks

@@ -4,17 +4,17 @@
             "id": "outer_north_out",
             "points": [
                 {
-                    "x": 80,
+                    "x": 920,
                     "y": 165
                 },
                 {
-                    "x": 920,
+                    "x": 80,
                     "y": 165
                 }
             ],
             "width": 30,
             "nextLanes": [
-                "outer_east_out"
+                "outer_west_out"
             ],
             "speedLimit": 200
         },
@@ -41,16 +41,16 @@
             "points": [
                 {
                     "x": 935,
-                    "y": 180
+                    "y": 520
                 },
                 {
                     "x": 935,
-                    "y": 520
+                    "y": 180
                 }
             ],
             "width": 30,
             "nextLanes": [
-                "outer_south_out"
+                "outer_north_out"
             ],
             "speedLimit": 200
         },
@@ -76,17 +76,17 @@
             "id": "outer_south_out",
             "points": [
                 {
-                    "x": 920,
+                    "x": 80,
                     "y": 535
                 },
                 {
-                    "x": 80,
+                    "x": 920,
                     "y": 535
                 }
             ],
             "width": 30,
             "nextLanes": [
-                "outer_west_out"
+                "outer_east_out"
             ],
             "speedLimit": 200
         },
@@ -113,16 +113,16 @@
             "points": [
                 {
                     "x": 65,
-                    "y": 520
+                    "y": 180
                 },
                 {
                     "x": 65,
-                    "y": 180
+                    "y": 520
                 }
             ],
             "width": 30,
             "nextLanes": [
-                "outer_north_out"
+                "outer_south_out"
             ],
             "speedLimit": 200
         },
@@ -368,11 +368,11 @@
             "id": "southbound_left_top_out",
             "points": [
                 {
-                    "x": 365,
+                    "x": 275,
                     "y": 180
                 },
                 {
-                    "x": 365,
+                    "x": 275,
                     "y": 290
                 }
             ],
@@ -386,11 +386,11 @@
             "id": "southbound_left_top_in",
             "points": [
                 {
-                    "x": 335,
+                    "x": 305,
                     "y": 180
                 },
                 {
-                    "x": 335,
+                    "x": 305,
                     "y": 290
                 }
             ],
@@ -404,11 +404,11 @@
             "id": "southbound_left_mid_out",
             "points": [
                 {
-                    "x": 365,
+                    "x": 275,
                     "y": 410
                 },
                 {
-                    "x": 365,
+                    "x": 275,
                     "y": 520
                 }
             ],
@@ -423,11 +423,11 @@
             "id": "southbound_left_mid_in",
             "points": [
                 {
-                    "x": 335,
+                    "x": 305,
                     "y": 410
                 },
                 {
-                    "x": 335,
+                    "x": 305,
                     "y": 520
                 }
             ],
@@ -442,11 +442,11 @@
             "id": "northbound_left_bottom_out",
             "points": [
                 {
-                    "x": 275,
+                    "x": 365,
                     "y": 520
                 },
                 {
-                    "x": 275,
+                    "x": 365,
                     "y": 410
                 }
             ],
@@ -460,11 +460,11 @@
             "id": "northbound_left_bottom_in",
             "points": [
                 {
-                    "x": 305,
+                    "x": 335,
                     "y": 520
                 },
                 {
-                    "x": 305,
+                    "x": 335,
                     "y": 410
                 }
             ],
@@ -478,11 +478,11 @@
             "id": "northbound_left_top_out",
             "points": [
                 {
-                    "x": 275,
+                    "x": 365,
                     "y": 290
                 },
                 {
-                    "x": 275,
+                    "x": 365,
                     "y": 180
                 }
             ],
@@ -497,11 +497,11 @@
             "id": "northbound_left_top_in",
             "points": [
                 {
-                    "x": 305,
+                    "x": 335,
                     "y": 290
                 },
                 {
-                    "x": 305,
+                    "x": 335,
                     "y": 180
                 }
             ],
@@ -516,11 +516,11 @@
             "id": "southbound_right_top_out",
             "points": [
                 {
-                    "x": 725,
+                    "x": 635,
                     "y": 180
                 },
                 {
-                    "x": 725,
+                    "x": 635,
                     "y": 290
                 }
             ],
@@ -534,11 +534,11 @@
             "id": "southbound_right_top_in",
             "points": [
                 {
-                    "x": 695,
+                    "x": 665,
                     "y": 180
                 },
                 {
-                    "x": 695,
+                    "x": 665,
                     "y": 290
                 }
             ],
@@ -552,11 +552,11 @@
             "id": "southbound_right_mid_out",
             "points": [
                 {
-                    "x": 725,
+                    "x": 635,
                     "y": 410
                 },
                 {
-                    "x": 725,
+                    "x": 635,
                     "y": 520
                 }
             ],
@@ -571,11 +571,11 @@
             "id": "southbound_right_mid_in",
             "points": [
                 {
-                    "x": 695,
+                    "x": 665,
                     "y": 410
                 },
                 {
-                    "x": 695,
+                    "x": 665,
                     "y": 520
                 }
             ],
@@ -590,11 +590,11 @@
             "id": "northbound_right_bottom_out",
             "points": [
                 {
-                    "x": 635,
+                    "x": 725,
                     "y": 520
                 },
                 {
-                    "x": 635,
+                    "x": 725,
                     "y": 410
                 }
             ],
@@ -608,11 +608,11 @@
             "id": "northbound_right_bottom_in",
             "points": [
                 {
-                    "x": 665,
+                    "x": 695,
                     "y": 520
                 },
                 {
-                    "x": 665,
+                    "x": 695,
                     "y": 410
                 }
             ],
@@ -626,11 +626,11 @@
             "id": "northbound_right_top_out",
             "points": [
                 {
-                    "x": 635,
+                    "x": 725,
                     "y": 290
                 },
                 {
-                    "x": 635,
+                    "x": 725,
                     "y": 180
                 }
             ],
@@ -645,11 +645,11 @@
             "id": "northbound_right_top_in",
             "points": [
                 {
-                    "x": 665,
+                    "x": 695,
                     "y": 290
                 },
                 {
-                    "x": 665,
+                    "x": 695,
                     "y": 180
                 }
             ],
