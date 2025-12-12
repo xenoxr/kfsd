@@ -46,9 +46,69 @@ interface MapData {
 export class MapLoader {
     static load(world: World, data: MapData) {
         // Load Lanes
+        // Create a map first to look up lane data for angle calculations
+        const laneDataMap = new Map<string, any>();
+        for (const l of data.lanes) {
+            laneDataMap.set(l.id, l);
+        }
+
+        // Load Lanes with enhanced connection filtering
         for (const l of data.lanes) {
             const points = l.points.map(p => new Vec2(p.x, p.y));
-            const lane = new Lane(l.id, points, l.width, 30, l.nextLanes);
+            const speedLimit = (l as any).speedLimit || 30;
+
+            let validNextLanes: string[] = [];
+
+            // Helper to get lane heading
+            const getLaneHeading = (pts: { x: number, y: number }[]) => {
+                if (pts.length < 2) return 0;
+                const p1 = pts[0];
+                const p2 = pts[pts.length - 1];
+                return Math.atan2(p2.y - p1.y, p2.x - p1.x);
+            };
+
+            const myHeading = getLaneHeading(l.points);
+
+            if (l.nextLanes) {
+                for (const nextId of l.nextLanes) {
+                    const nextLaneData = laneDataMap.get(nextId);
+                    if (!nextLaneData) continue;
+
+                    // 1. Basic Discipline: _in -> _in, _out -> _out
+                    // This prevents changing between inner/outer loops or lanes implicitly
+                    const currentIsOut = l.id.endsWith('_out');
+                    const currentIsIn = l.id.endsWith('_in');
+                    const nextIsOut = nextId.endsWith('_out');
+                    const nextIsIn = nextId.endsWith('_in');
+
+                    if (currentIsOut && !nextIsOut) continue; // Out must go to Out
+                    if (currentIsIn && !nextIsIn) continue;   // In must go to In (mostly)
+
+                    // 2. Turn Restrictions (Non-Loop roads only)
+                    // Loop roads (outer_*) curve continuously, so "Right Turn" geometry is normal for both lanes.
+                    // Intersection roads (main_, southbound_, etc.) strictly enforce turn lanes.
+                    if (!l.id.startsWith('outer_')) {
+                        const nextHeading = getLaneHeading(nextLaneData.points);
+                        let angleDiff = nextHeading - myHeading;
+                        // Normalize -PI to PI
+                        while (angleDiff > Math.PI) angleDiff -= Math.PI * 2;
+                        while (angleDiff < -Math.PI) angleDiff += Math.PI * 2;
+
+                        const isRightTurn = angleDiff > Math.PI / 4; // > 45 deg
+                        const isLeftTurn = angleDiff < -Math.PI / 4; // < -45 deg
+
+                        // Rule: Inner Lane (_in) cannot turn Right (crosses Outer lane)
+                        if (currentIsIn && isRightTurn) continue;
+
+                        // Rule: Outer Lane (_out) cannot turn Left (crosses Inner lane)
+                        if (currentIsOut && isLeftTurn) continue;
+                    }
+
+                    validNextLanes.push(nextId);
+                }
+            }
+
+            const lane = new Lane(l.id, points, l.width, speedLimit, validNextLanes);
             world.addLane(lane);
         }
 
@@ -72,15 +132,42 @@ export class MapLoader {
         }
 
         // Load Intersections
+        const crossIds = new Set(['i_cross_west', 'i_cross_east']);
+        const noSignalPrefixes = ['i_outer_']; // curves/corners: no traffic lights
         for (const i of data.intersections) {
             const center = new Vec2(i.center.x, i.center.y);
             // Get associated crosswalks
             const connectedCrosswalks = crosswalksByIntersection.get(i.id) || [];
 
             const intersection = new Intersection(i.id, center, i.lanes, connectedCrosswalks);
+
+            const isNoSignal = noSignalPrefixes.some(prefix => i.id.startsWith(prefix));
+
+            if (isNoSignal) {
+                // No signals here; just register intersection with empty lights and no connected lanes
+                intersection.connectedLanes = [];
+                world.intersections.set(i.id, intersection);
+                continue;
+            }
+
+            // For non-cross (non-사거리) intersections, keep only left-turn signals
+            if (!crossIds.has(i.id)) {
+                const leftTurnLanes = i.lanes.filter(id => id.endsWith('_in'));
+                if (leftTurnLanes.length > 0) {
+                    intersection.greenGroups = [leftTurnLanes];
+                    intersection.leftTurnGroups = [leftTurnLanes];
+                    intersection.leftTurnOnly = true;
+                    intersection.greenGroupDirections = ['EW'];
+                }
+            }
+
             world.intersections.set(i.id, intersection);
 
             // Set up traffic light groups
+            // If already configured with groups AND left-turn-only (e.g. from non-cross block), skip generation
+            // The previous logic for `crossIds` and `leftTurnOnly` has been removed.
+            // Now, all intersections will proceed to group generation unless explicitly configured.
+
             if (i.greenGroups && i.greenGroups.length > 0) {
                 // Use explicit green groups from map data
                 intersection.greenGroups = i.greenGroups;

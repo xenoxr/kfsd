@@ -4,6 +4,7 @@ import { MapLoader } from './world/MapLoader';
 import { Vehicle } from './entities/Vehicle';
 import { Pedestrian } from './entities/Pedestrian';
 import { RLInterface } from './rl/Interface';
+import './style.css';
 import { Vec2 } from './core/Vec2';
 
 async function main() {
@@ -50,10 +51,10 @@ async function main() {
     npc5.currentLaneId = 'main_w1_out';
     world.vehicles.push(npc5);
 
-    // Spawn NPC on right vertical connector heading North (left-hand traffic: now at x=665)
-    const npc3 = new Vehicle(665, 450, 20, 10, 'car');
-    npc3.heading = -Math.PI / 2;
-    npc3.currentLaneId = 'northbound_right_bottom_in';
+    // Spawn NPC on right vertical connector heading North (intentionally opposite for scenario)
+    const npc3 = new Vehicle(695, 450, 20, 10, 'car');
+    npc3.heading = -Math.PI / 2; // North
+    npc3.currentLaneId = 'southbound_right_mid_in';
     world.vehicles.push(npc3);
 
     // Spawn Pedestrians on Sidewalks
@@ -151,35 +152,104 @@ async function main() {
 
     // Input Handling
     const keys: { [key: string]: boolean } = {};
-    window.addEventListener('keydown', e => keys[e.key] = true);
+    window.addEventListener('keydown', e => {
+        keys[e.key] = true;
+        if (e.key === ' ') {
+            isPaused = !isPaused;
+        }
+    });
     window.addEventListener('keyup', e => keys[e.key] = false);
 
     let lastTime = performance.now();
+    let isPaused = false;
+    let latestDebugText = '';
+
+    async function copyText(text: string): Promise<boolean> {
+        // Prefer async clipboard if available and in secure context
+        if (navigator.clipboard && window.isSecureContext) {
+            try {
+                await navigator.clipboard.writeText(text);
+                return true;
+            } catch (err) {
+                console.warn('Async clipboard failed, falling back', err);
+            }
+        }
+
+        // Fallback: temporary textarea + execCommand
+        try {
+            const textarea = document.createElement('textarea');
+            textarea.value = text;
+            textarea.style.position = 'fixed';
+            textarea.style.opacity = '0';
+            textarea.style.left = '-9999px';
+            document.body.appendChild(textarea);
+            textarea.focus();
+            textarea.select();
+            const ok = document.execCommand('copy');
+            document.body.removeChild(textarea);
+            return ok;
+        } catch (err) {
+            console.error('Legacy copy failed', err);
+            return false;
+        }
+    }
+
+    const debugCopyBtn = document.getElementById('debug-copy');
+    if (debugCopyBtn) {
+        debugCopyBtn.addEventListener('click', async () => {
+            if (!latestDebugText) return;
+            try {
+                const ok = await copyText(latestDebugText);
+                const prev = debugCopyBtn.innerText;
+                debugCopyBtn.innerText = ok ? 'Copied' : 'Copy failed';
+                setTimeout(() => debugCopyBtn.innerText = prev, 800);
+            } catch (err) {
+                console.error('Clipboard copy failed', err);
+            }
+        });
+    }
 
     function loop(now: number) {
         const dt = (now - lastTime) / 1000;
         lastTime = now;
 
-        // Manual Control for Ego (Override RL)
-        let steer = 0;
-        let throttle = 0;
-        let brake = 0;
+        if (!isPaused) {
+            // Manual Control for Ego (Override RL)
+            let steer = 0;
+            let throttle = 0;
+            let brake = 0;
 
-        if (keys['ArrowLeft']) steer = -1;
-        if (keys['ArrowRight']) steer = 1;
-        if (keys['ArrowUp']) throttle = 1;
-        if (keys['ArrowDown']) brake = 1;
+            if (keys['ArrowLeft']) steer = -1;
+            if (keys['ArrowRight']) steer = 1;
+            if (keys['ArrowUp']) throttle = 1;
+            if (keys['ArrowDown']) brake = 1;
 
-        // Apply Actions
-        // RLInterface.applyAction(world, 'ego', { steer, throttle, brake }, dt);
-        // Direct for now since we don't have IDs wired perfectly yet
-        ego.applyControl(steer, throttle, brake, dt);
+            // Apply Actions
+            // RLInterface.applyAction(world, 'ego', { steer, throttle, brake }, dt);
+            // Direct for now since we don't have IDs wired perfectly yet
+            ego.applyControl(steer, throttle, brake, dt);
 
-        // Update World
-        world.update(dt);
+            // Update World
+            world.update(dt);
+        }
 
         // Render
         renderer.render(world, ego);
+
+        // Debug Overlay
+        const debugPanel = document.getElementById('debug-panel');
+        if (debugPanel) {
+            let debugText = `FPS: ${(1 / dt).toFixed(0)}\n`;
+            debugText += `Ego: ${ego.getDebugInfo()}\n\n`;
+
+            world.vehicles.forEach(v => {
+                if (v !== ego) {
+                    debugText += `${v.getDebugInfo()}\n`;
+                }
+            });
+            debugPanel.innerText = debugText;
+            latestDebugText = debugText;
+        }
 
         // Debug Observation
         // const obs = RLInterface.getObservation(world, 'ego');

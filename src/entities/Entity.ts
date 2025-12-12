@@ -8,8 +8,12 @@ export abstract class Entity {
     public width: number;
     public height: number;
     public dead: boolean = false;
+    public id: number;
+    private static nextId: number = 1;
+    private logs: string[] = [];
 
     constructor(x: number, y: number, width: number, height: number, heading: number = 0) {
+        this.id = Entity.nextId++;
         this.pos = new Vec2(x, y);
         this.width = width;
         this.height = height;

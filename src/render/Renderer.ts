@@ -1,6 +1,7 @@
 import { World } from '../world/World';
 import { Vehicle } from '../entities/Vehicle';
 import { Vec2 } from '../core/Vec2';
+import { LaneLabeler } from '../world/LaneLabeler';
 
 export class Renderer {
     public canvas: HTMLCanvasElement;
@@ -55,6 +56,9 @@ export class Renderer {
             ctx.stroke();
         }
 
+        // Precompute lane labels with per-road/per-direction ordering
+        const laneLabels = LaneLabeler.getLabels(world);
+
         // Draw Lanes
         ctx.lineWidth = 1;
         for (const lane of world.lanes.values()) {
@@ -90,6 +94,31 @@ export class Renderer {
             ctx.stroke();
             ctx.setLineDash([]);
             */
+
+            // Lane labels (road name + lane number)
+            const label = laneLabels.get(lane.id);
+            if (label) {
+                const mid = lane.getPointAtDistance(lane.getLength() / 2);
+                const heading = lane.getHeadingAt(mid.index);
+                const vertical = Math.abs(heading.y) > Math.abs(heading.x);
+                ctx.save();
+                ctx.translate(mid.point.x, mid.point.y);
+                if (vertical) {
+                    const angle = heading.y >= 0 ? Math.PI / 2 : -Math.PI / 2;
+                    ctx.rotate(angle);
+                }
+                ctx.fillStyle = 'rgba(255,255,255,0.9)';
+                ctx.strokeStyle = 'rgba(0,0,0,0.6)';
+                ctx.lineWidth = 2;
+                ctx.font = '16px monospace';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                const prefix = label.dir ? `${label.dir}` : 'L';
+                const text = `${label.road} ${prefix}${label.laneNo}`;
+                ctx.strokeText(text, 0, 0);
+                ctx.fillText(text, 0, 0);
+                ctx.restore();
+            }
         }
 
         // Draw Custom Markings
@@ -200,11 +229,16 @@ export class Renderer {
 
                     // LEFT_ARROW (state === 3) - 좌회전 화살표 신호
                     if (state === 3) {
-                        // 화살표 배경 (검정 원)
+                        // 화살표 배경 (검정 원) - 더 크게
                         ctx.fillStyle = '#000';
                         ctx.beginPath();
-                        ctx.arc(end.x, end.y, 10, 0, Math.PI * 2);
+                        ctx.arc(end.x, end.y, 14, 0, Math.PI * 2);
                         ctx.fill();
+
+                        // 테두리 추가
+                        ctx.strokeStyle = '#333';
+                        ctx.lineWidth = 2;
+                        ctx.stroke();
 
                         // 녹색 좌회전 화살표 그리기
                         ctx.save();
@@ -218,22 +252,23 @@ export class Renderer {
                         }
                         ctx.rotate(laneAngle);
 
-                        // 화살표 그리기 (왼쪽 방향)
+                        // 화살표 그리기 (왼쪽 방향) - 더 크고 굵게
                         ctx.strokeStyle = '#00FF00';
                         ctx.fillStyle = '#00FF00';
-                        ctx.lineWidth = 2;
+                        ctx.lineWidth = 3;
+                        ctx.lineCap = 'round';
 
-                        // 화살표 몸체 (살짝 굽은 선)
+                        // 화살표 몸체 (살짝 굽은 선) - 크기 1.8배
                         ctx.beginPath();
-                        ctx.moveTo(4, 0);    // 시작점 (오른쪽)
-                        ctx.quadraticCurveTo(-2, 0, -4, -5); // 왼쪽 위로 곡선
+                        ctx.moveTo(7, 0);    // 시작점 (오른쪽)
+                        ctx.quadraticCurveTo(-3, 0, -7, -9); // 왼쪽 위로 곡선
                         ctx.stroke();
 
-                        // 화살표 머리 (삼각형)
+                        // 화살표 머리 (삼각형) - 더 크게
                         ctx.beginPath();
-                        ctx.moveTo(-4, -5);  // 화살표 끝점
-                        ctx.lineTo(-7, -2);  // 왼쪽 아래
-                        ctx.lineTo(-1, -3);  // 오른쪽
+                        ctx.moveTo(-7, -9);   // 화살표 끝점
+                        ctx.lineTo(-12, -4);  // 왼쪽 아래
+                        ctx.lineTo(-3, -6);   // 오른쪽
                         ctx.closePath();
                         ctx.fill();
 
@@ -272,11 +307,24 @@ export class Renderer {
 
             ctx.fillRect(-veh.width / 2, -veh.height / 2, veh.width, veh.height);
 
-            // Headlights / Direction
             ctx.fillStyle = 'yellow';
             ctx.fillRect(veh.width / 2 - 2, -veh.height / 2 + 2, 2, 5);
             ctx.fillRect(veh.width / 2 - 2, veh.height / 2 - 7, 2, 5);
 
+            ctx.restore();
+
+            // Draw ID Text (in world space, not rotated with car for readability)
+            ctx.save();
+            ctx.translate(veh.pos.x, veh.pos.y);
+            ctx.fillStyle = 'white';
+            ctx.font = '12px Arial';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            // Draw text shadow for contrast
+            ctx.strokeStyle = 'black';
+            ctx.lineWidth = 2;
+            ctx.strokeText(`${veh.id}`, 0, -10);
+            ctx.fillText(`${veh.id}`, 0, -10);
             ctx.restore();
         }
 
