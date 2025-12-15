@@ -21,8 +21,12 @@ export class Vehicle extends Entity {
     public isOvertaking: boolean = false;
     public isReversing: boolean = false;
     public reverseTimer: number = 0;
+    public reverseCooldown: number = 0; // Cooldown timer after reverse ends
+    public reverseSteerBias: number = 0; // Steering bias while reversing (helps create escape angle)
+    public postReverseStraightTimer: number = 0; // Keep straight right after reverse
     public overtakeTargetId: number | string | null = null;
     public lateralOffset: number = 0;
+    public currentSteer: number = 0; // Current steering angle for logging
 
     // Debug logs
     private decisionLogs: string[] = [];
@@ -124,44 +128,6 @@ export class Vehicle extends Entity {
         this.speed = Math.max(-20, Math.min(this.speed, this.maxSpeed));
     }
 
-    // ... (Lines 120-??? are constrainToLane, skipping) ...
-    // Note: Since I cannot see where constraintToLane ends and followLane P-Controller begins in this view,
-    // I will target the P-Controller block separately in a second edit or using a wider context if possible.
-    // Wait, the Instruction asked to Update P-Controller too.
-    // P-Controller is further down (around line 585). 
-    // I can't do both in one 'replace_file_content' if they are far apart.
-    // I will do Physics first.
-
-    // Check constraints - moved to World.ts to ensure access to map data
-
-    public constrainToLane(lane: Lane) {
-        // Enforce hard boundaries so vehicles never cross center or into sidewalk
-        const proj = lane.getProjectedPoint(this.pos);
-
-        // Calculate vehicle's "offset" from the lane centerline
-        // Vector from projected point to vehicle position
-        const toVehicle = this.pos.sub(proj.point);
-        const dist = toVehicle.mag();
-
-        // Lane half-width - Half car width (assuming car width is around 20 for safety margin)
-        const safeHalfWidth = (lane.width / 2) - 8;
-
-        if (dist > safeHalfWidth && dist > 0.001) {
-            // Need to push back
-            // Direction to push is -toVehicle
-            const correction = toVehicle.normalize().mul(safeHalfWidth - dist);
-            this.pos = this.pos.add(correction);
-
-            // Also kill velocity component perpendicular to lane to prevent "bouncing" against the invisible wall
-            // Lane direction at projection
-            const laneDir = lane.getHeadingAt(proj.segmentIndex);
-
-            // Project velocity onto lane direction
-            const vDotL = this.vel.dot(laneDir);
-            this.vel = laneDir.mul(vDotL);
-        }
-    }
-
     // Pure Pursuit-like lane following
     followLane(world: World, dt: number) {
         if (!this.currentLaneId) return;
@@ -169,6 +135,12 @@ export class Vehicle extends Entity {
         if (!lane) {
             // Try to find nearest lane if lost?
             return;
+        }
+
+        // Decrease reverse cooldown timer
+        if (this.reverseCooldown > 0) {
+            this.reverseCooldown -= dt;
+            if (this.reverseCooldown < 0) this.reverseCooldown = 0;
         }
 
         // 1. Find nearest point on current lane (segment projection, not just vertices)
@@ -215,12 +187,12 @@ export class Vehicle extends Entity {
         }
 
         // Lookahead Logic
-        // Lookahead Logic
-        // Normal: dependent on speed (min 30, max 100). coeff 1.2 (Tightened from 1.5 for better cornering)
-        // Overtaking: Reverted to 40px
-        let lookaheadDist = Math.max(30, Math.min(100, this.speed * 1.2));
+        // Shorter lookahead for better cornering control
+        // Normal: 0.8x speed (min 25, max 80)
+        // Overtaking: 50px for wider arc
+        let lookaheadDist = Math.max(25, Math.min(80, this.speed * 0.8));
         if (this.isOvertaking) {
-            lookaheadDist = 40;
+            lookaheadDist = 50;
         }
 
         // Final target calculation
@@ -256,23 +228,31 @@ export class Vehicle extends Entity {
         // Steer Logic
         let steer = 0;
         if (this.isReversing) {
-            // FORCE STRAIGHT while backing up to avoid J-turns/Spinning
-            steer = 0;
+            // Build escape angle while backing up so we don't drive straight back into the blocker
+            steer = this.reverseSteerBias;
+            this.lateralOffset += (18 - this.lateralOffset) * 0.3; // push laterally for a wider exit
             angleDiff = 0; // For debug display
-            this.lateralOffset = 0; // Reset offset logic immediately
+        } else if (this.postReverseStraightTimer > 0) {
+            // After reverse, force straight for a moment to avoid over-rotating forward
+            this.postReverseStraightTimer -= dt;
+            if (this.postReverseStraightTimer < 0) this.postReverseStraightTimer = 0;
+            steer = 0;
+            angleDiff = 0;
         } else {
-            steer = Math.max(-1, Math.min(1, angleDiff * 2.5));
+            // Higher steering gain (3.5) for more responsive cornering
+            steer = Math.max(-1, Math.min(1, angleDiff * 3.5));
         }
 
         // Adjust speed based on turn
         let desiredSpeed = lane.speedLimit || this.maxSpeed;
 
-        // More aggressive slowdown on turns (Squared curve)
-        // Previous: Linear. New: Squared for sharper slowdown on sharp turns.
+        // Aggressive cornering slowdown to prevent lane departure
+        // Cubic curve for very sharp slowdown on sharp turns
         const turnRatio = Math.abs(angleDiff) / (Math.PI / 2);
-        const turnFactor = Math.max(0.2, (1 - turnRatio) * (1 - turnRatio));
+        const turnFactor = Math.max(0.15, Math.pow(1 - turnRatio, 3));
 
-        if (Math.abs(angleDiff) > 0.1 && !this.isOvertaking) { // Don't slow down if Overtaking!
+        // CRITICAL: Apply turn slowdown ALWAYS (even when overtaking)
+        if (Math.abs(angleDiff) > 0.08) { // Earlier slowdown threshold
             desiredSpeed *= turnFactor;
             this.log(`Turn: angle ${angleDiff.toFixed(2)}, slowFactor ${turnFactor.toFixed(2)}`);
         }
@@ -361,9 +341,9 @@ export class Vehicle extends Entity {
             }
         }
 
-        const SAFE_GAP = 240; // Maintain ~240px gap (Doubled)
-        const CRITICAL_GAP = 80; // Panic stop distance (Doubled)
-        const MIN_BUFFER = 30;   // Extra buffer beyond physics stop distance (Doubled)
+        const SAFE_GAP = 120; // Maintain ~120px gap (reduced for tighter following)
+        const CRITICAL_GAP = 40; // Panic stop distance
+        const MIN_BUFFER = 20;   // Extra buffer beyond physics stop distance
 
         let forceBrake = false;
 
@@ -371,7 +351,8 @@ export class Vehicle extends Entity {
             // EXEMPTION: If we are overtaking THIS vehicle, or Reversing, IGNORE Emergency Stop
             const isTarget = this.isOvertaking && this.overtakeTargetId === vehicleAhead.id;
 
-            if (!this.isReversing && !isTarget) {
+            // CRITICAL: Also skip if in reverseCooldown to allow forward movement after reverse
+            if (!this.isReversing && !isTarget && this.reverseCooldown <= 0) {
                 const relativeSpeed = this.speed - vehicleAhead.speed;
                 const stoppingDistance = (this.speed * this.speed) / (2 * this.braking) + MIN_BUFFER;
                 const gap = minDistToVehicle;
@@ -408,12 +389,15 @@ export class Vehicle extends Entity {
         // --- FRONT CORRIDOR CHECK (catch cross-lane targets that are directly ahead) ---
         // If any vehicle sits in a narrow corridor in front of us (same heading direction), treat as obstacle.
         const headingVec = Vec2.fromAngle(this.heading).normalize();
-        const MAX_FRONT_CHECK = 160; // pixels
-        const CORRIDOR_HALF_WIDTH = this.width * 0.45; // Narrower tolerance (was 0.6) to allow grazing
+        const MAX_FRONT_CHECK = 140; // pixels - slightly reduced range
+        const CORRIDOR_HALF_WIDTH = this.width * 0.5; // Balanced tolerance for realistic collision detection
 
         // --- PRE-CALCULATE BLOCKING VEHICLE ---
         let blockingVehicle: Vehicle | null = null;
 
+        // CRITICAL: Skip front obstacle check if reversing OR in reverseCooldown
+        // This allows the vehicle to move forward and correct its heading after reverse
+        if (!this.isReversing && this.reverseCooldown <= 0) {
         for (const other of world.vehicles) {
             if (other === this) continue;
 
@@ -468,6 +452,7 @@ export class Vehicle extends Entity {
                 break;
             }
         }
+        } // End of if (!this.isReversing) for Front Corridor Check
 
         // --- OVERTAKE LOGIC ---
         // Unified Blocker: Check both EmergencyBrake blocker AND ACC blocker
@@ -482,40 +467,56 @@ export class Vehicle extends Entity {
         const blockerStuck = effectiveBlocker && effectiveBlocker.speed < 10;
 
         // FIX: Added 'forceBrake' check. If we are emergency braking, we are stuck.
-        if ((this.isOvertaking && selfStuck) || (selfStuck && (forceBrake || (effectiveBlocker && blockerStuck)))) {
-            this.stuckTimer += dt;
-        } else {
-            this.stuckTimer = 0;
+        // CRITICAL: Don't increment stuckTimer during reverseCooldown to prevent immediate re-stuck
+        if (this.reverseCooldown <= 0 && this.postReverseStraightTimer <= 0) {
+            if ((this.isOvertaking && selfStuck) || (selfStuck && (forceBrake || (effectiveBlocker && blockerStuck)))) {
+                this.stuckTimer += dt;
+            } else {
+                this.stuckTimer = 0;
+            }
         }
 
         // 1.5 Reverse Logic (Unstick)
-        // Trigger if stuck for > 4.0s (General)
-        // OR Trigger IMMEDIATELY (>0.5s) if physically touching (Gap <= 0)
+        // Trigger if stuck for > 3.0s (General) - faster reaction
+        // OR Trigger IMMEDIATELY (>0.3s) if physically touching (Gap <= 0)
         const isTouching = minDistToVehicle <= 0;
-        if (!this.isReversing && (this.stuckTimer > 4.0 || (isTouching && this.stuckTimer > 0.5))) {
+        if (!this.isReversing && this.postReverseStraightTimer <= 0 && (this.stuckTimer > 3.0 || (isTouching && this.stuckTimer > 0.3))) {
             this.isReversing = true;
             this.reverseTimer = 0;
             this.stuckTimer = 0;
-            const reason = isTouching ? "Gap<=0" : "Timer>4s";
+            // Bias steering while reversing to build an escape angle (prefer left/overtake side)
+            if (lane) {
+                const myProj = lane.getProjectedPoint(this.pos);
+                const laneDir = lane.getHeadingAt(myProj.segmentIndex);
+                const leftNormal = new Vec2(-laneDir.y, laneDir.x);
+                const signedOffset = this.pos.sub(myProj.point).dot(leftNormal); // + means left of center
+                // Use aggressive steer to reach ~45°+ yaw change
+                this.reverseSteerBias = signedOffset > lane.width * 0.3 ? -0.65 : 0.85;
+            } else {
+                this.reverseSteerBias = 0.85;
+            }
+            const reason = isTouching ? "Gap<=0" : "Timer>3s";
             this.addEvent(`REVERSE: Stuck (${reason}). Backing up.`);
             console.log(`[Veh ${this.id}] STUCK (${reason}). Initiating Reverse.`);
         }
 
         if (this.isReversing) {
             this.reverseTimer += dt;
-            desiredSpeed = -15; // Back up slowly
+            desiredSpeed = -20; // Back up a bit faster
             forceBrake = false; // Override Emergency Stop
 
-            // End Reverse
-            if (this.reverseTimer > 1.5) {
+            // End Reverse - shorter duration for quicker recovery
+            if (this.reverseTimer > 1.2) {
                 this.isReversing = false;
+                this.reverseCooldown = 3.0; // longer cooldown to allow forward movement
+                this.postReverseStraightTimer = 2.0; // Go straight briefly after backing up
                 this.addEvent("REVERSE COMPLETE. Retrying.");
             }
         }
 
         // 2.5 Overtake Abort
-        // Reduced to 3.0s (was 5.0s) for faster reaction
-        if (this.isOvertaking && this.stuckTimer > 3.0) {
+        // Fast abort (2.5s) to prevent prolonged stuck state
+        if (this.isOvertaking && this.stuckTimer > 2.5) {
             this.isOvertaking = false;
             // CRITICAL FIX: Trigger Reverse immediately to break "Abort -> Restart" loop
             this.isReversing = true;
@@ -523,11 +524,21 @@ export class Vehicle extends Entity {
             this.stuckTimer = 0;
 
             this.addEvent("OVERTAKE ABORTED: Stuck. Reversing.");
-            console.log(`[Veh ${this.id}] Overtake ABORTED (Stuck > 3s) -> REVERSING`);
+            console.log(`[Veh ${this.id}] Overtake ABORTED (Stuck > 2.5s) -> REVERSING`);
+        }
+
+        // 2.6 Abort overtake if in sharp corner (angle > 0.5 rad ~ 28 degrees)
+        if (this.isOvertaking && Math.abs(angleDiff) > 0.5) {
+            this.isOvertaking = false;
+            this.lateralOffset = 0;
+            this.stuckTimer = 0; // Reset to retry later on straight
+            this.addEvent(`OVERTAKE ABORTED: Sharp corner (${angleDiff.toFixed(2)})`);
+            console.log(`[Veh ${this.id}] Overtake ABORTED (Sharp Corner: ${angleDiff.toFixed(2)})`);
         }
 
         // 2. Start Overtake
-        if (this.stuckTimer > 2.0 && !this.isOvertaking && !this.isReversing && effectiveBlocker) { // Reduced to 2.0s
+        // Only start if: stuck + not in corner (angleDiff < 0.4 rad ~ 23 degrees)
+        if (this.stuckTimer > 1.5 && !this.isOvertaking && !this.isReversing && effectiveBlocker && Math.abs(angleDiff) < 0.4) {
             // Check Safety (Opposite Lane)
             // RHT: Overtake on Left (Centerline). Scan Left (+30px from Left Normal).
             let isSafe = true;
@@ -562,42 +573,95 @@ export class Vehicle extends Entity {
 
         // 3. Execute Overtake
         if (this.isOvertaking) {
-            // Apply Lateral Offset (Steer Left for RHT)
-            // LERP to 30px (Reverted from 50px as requested)
-            const targetOffset = 30.0;
-            this.lateralOffset += (targetOffset - this.lateralOffset) * 0.1; // Smooth transition
+            // DYNAMIC Lateral Offset: Based on target vehicle position and lane boundaries
+            let targetOffset = 30.0; // Default offset
 
-            // Override Lookahead for smoother, wider arc
-            // Was 30, increased to 80 to make the turn "Bigger/Rounder"
-            const overtakeLookahead = 80;
+            // Find target vehicle
+            let target = effectiveBlocker;
+            if (!target && this.overtakeTargetId) {
+                target = world.vehicles.find(v => v.id === this.overtakeTargetId) || null;
+            }
 
-            // --- USER REQUEST: "Eliminate Emergency Stop" ---
-            // If overtaking, we forcefully DISABLE braking to allow full maneuverability.
-            // We rely on the initial 'isSafe' check for safety.
-            forceBrake = false;
-            desiredSpeed = this.maxSpeed; // Maintain speed
+            if (target && lane) {
+                // Calculate target's lateral position from lane centerline
+                const targetProj = lane.getProjectedPoint(target.pos);
+                const targetToCenter = target.pos.sub(targetProj.point);
+                const targetLateralDist = targetToCenter.mag();
 
-            // Ignore FrontObstacle brake IF it is the target
+                // Calculate my lateral position
+                const myProj = lane.getProjectedPoint(this.pos);
+                const myToCenter = this.pos.sub(myProj.point);
+                const myLateralDist = myToCenter.mag();
+
+                // Calculate required offset to clear target (car width + safety margin)
+                const clearanceNeeded = this.width + 5; // 5px safety margin
+
+                // Determine target offset based on target position
+                // If target is close to center, we need more offset
+                // Allow deep centerline crossing: up to ~1 lane width to the left (but protect sidewalk/right side)
+                const maxLeftOffset = lane.width * 1.0; // full lane shift to enter oncoming lane
+                const clearanceOffset = clearanceNeeded + targetLateralDist;
+                targetOffset = Math.min(clearanceOffset, maxLeftOffset);
+
+                // BOUNDARY CHECK: Ensure we don't drift into sidewalk on the right even while leaning left
+                const laneDirection = lane.getHeadingAt(myProj.segmentIndex);
+                const leftNormal = new Vec2(-laneDirection.y, laneDirection.x); // Perpendicular to lane, pointing left
+                const projectedPos = myProj.point.add(leftNormal.mul(targetOffset));
+                const projectedToCenter = projectedPos.sub(myProj.point);
+                const projectedLateralDist = projectedToCenter.mag();
+
+                // Keep right-side margin tight, but allow large left offsets for overtaking
+                const safeRightLimit = lane.width * 0.48;
+                if (targetOffset < 0 && projectedLateralDist > safeRightLimit) {
+                    targetOffset = safeRightLimit - myLateralDist;
+                    this.log(`Overtake: Right boundary limit ${targetOffset.toFixed(1)}`);
+                } else if (targetOffset > maxLeftOffset) {
+                    targetOffset = maxLeftOffset;
+                    this.log(`Overtake: Max left offset ${targetOffset.toFixed(1)}`);
+                }
+
+                // Reduce in corners for safety
+                if (Math.abs(angleDiff) > 0.3) {
+                    targetOffset *= 0.7; // 30% reduction in sharp corners
+                }
+            }
+
+            this.lateralOffset += (targetOffset - this.lateralOffset) * 0.15; // Smooth transition
+
+            // DYNAMIC Lookahead: Increase in corners for smoother arc
+            // Straight (angle < 0.2): 50px
+            // Corner (angle >= 0.2): up to 100px for wider, smoother arc
+            let overtakeLookahead = 50;
+            if (Math.abs(angleDiff) > 0.2) {
+                overtakeLookahead = Math.min(100, 50 + Math.abs(angleDiff) * 120);
+            }
+
+            // SAFETY FIRST: Only ignore emergency brake for the SPECIFIC target vehicle
+            // For all other obstacles, respect emergency stop
             if (effectiveBlocker && effectiveBlocker.id === this.overtakeTargetId) {
-                // redundant with forceBrake=false above, but keeping for clarity
-                forceBrake = false;
+                // Allow passing the target, but reduce speed if too close
+                if (minDistToVehicle < 30 && minDistToVehicle > 0) {
+                    desiredSpeed = Math.min(desiredSpeed, this.maxSpeed * 0.7);
+                } else {
+                    desiredSpeed = this.maxSpeed * 0.8; // Slightly slower for safety
+                }
+                // Don't force brake for target vehicle
+                if (forceBrake && vehicleAhead === effectiveBlocker) {
+                    forceBrake = false;
+                }
             }
-            // ... (rest of completion logic) ...
-
-            if (vehicleAhead && vehicleAhead.id === this.overtakeTargetId) {
-                desiredSpeed = this.maxSpeed;
-            }
+            // For non-target obstacles, keep forceBrake = true (respect emergency stop)
 
             // Check completion
-            let target = null;
-            if (this.overtakeTargetId) target = world.vehicles.find(v => v.id === this.overtakeTargetId);
+            let overtakeTarget = null;
+            if (this.overtakeTargetId) overtakeTarget = world.vehicles.find(v => v.id === this.overtakeTargetId);
 
-            if (!target) {
+            if (!overtakeTarget) {
                 this.isOvertaking = false;
                 // this.lateralOffset = 0; // Handled by LERP
                 console.log(`[Veh ${this.id}] Overtake Cancelled (Target Lost)`);
             } else {
-                const rel = target.pos.sub(this.pos);
+                const rel = overtakeTarget.pos.sub(this.pos);
                 const fwd = rel.dot(headingVec);
 
                 // If we passed them (they are behind by > car length + margin)
@@ -653,6 +717,7 @@ export class Vehicle extends Entity {
             }
         }
 
+        this.currentSteer = steer; // Store for logging
         this.applyControl(steer, throttle, brake, dt);
 
         // If we planned to force stop, ensure speed does not exceed desiredSpeed (protect against dt/brake lag)
@@ -660,12 +725,6 @@ export class Vehicle extends Entity {
             this.speed = desiredSpeed;
             this.vel = Vec2.fromAngle(this.heading).mul(this.speed);
         }
-
-        // PHYSICAL CONSTRAINT: REMOVED per User Request ("Don't use hardcode/dumb logic")
-        // We rely purely on Steering Logic (Lookahead/TurnFactor) to stay in lane.
-        // if (!this.isOvertaking && !this.isReversing) {
-        //    this.constrainToLane(lane);
-        // }
     }
 
     private getPointAhead(world: World, lane: Lane, distanceAhead: number): { point: Vec2, lane: Lane } {

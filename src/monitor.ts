@@ -44,9 +44,14 @@ function logStatus(payload: any) {
     // Convert generic object to table format
     const tableData = vehicles.map((v: any) => ({
         ID: v.id,
+        X: v.x || '-',
+        Y: v.y || '-',
         Lane: v.lane,
         Speed: v.speed,
-        Heading: v.heading,
+        Hdg: v.heading,
+        Steer: v.steer || '0',
+        LatOff: v.latOff || '0',
+        Status: v.status || '-',
         Action: v.action
     }));
 

@@ -6,6 +6,7 @@ import { Sidewalk } from './Sidewalk';
 import { Vehicle } from '../entities/Vehicle';
 import { Pedestrian } from '../entities/Pedestrian';
 import { Collision } from '../sim/Collision';
+import { Vec2 } from '../core/Vec2';
 import type { Marking } from './Marking';
 
 export class World {
@@ -54,9 +55,30 @@ export class World {
             // Car-Car collision
             const hit = Collision.checkList(veh, this.vehicles);
             if (hit) {
-                // Simple resolution: stop?
-                veh.speed = 0;
-                // console.log('Car crash!');
+                // Soft resolve: bleed some speed, then push vehicles apart to avoid infinite overlap
+                veh.speed = Math.min(veh.speed, hit.speed) * 0.5;
+                veh.vel = Vec2.fromAngle(veh.heading).mul(veh.speed);
+
+                // Minimal positional separation along the smallest overlap axis
+                const dx = veh.pos.x - hit.pos.x;
+                const dy = veh.pos.y - hit.pos.y;
+                const overlapX = (veh.width + hit.width) / 2 - Math.abs(dx);
+                const overlapY = (veh.height + hit.height) / 2 - Math.abs(dy);
+                if (overlapX > 0 && overlapY > 0) {
+                    if (overlapX < overlapY) {
+                        const push = (overlapX / 2) + 1;
+                        const dir = dx >= 0 ? 1 : -1;
+                        veh.pos.x += dir * push;
+                        hit.pos.x -= dir * push;
+                    } else {
+                        const push = (overlapY / 2) + 1;
+                        const dir = dy >= 0 ? 1 : -1;
+                        veh.pos.y += dir * push;
+                        hit.pos.y -= dir * push;
+                    }
+                }
+
+                if (veh.addEvent) veh.addEvent(`Collision: with ${hit.id}, speed damped+separated`);
             }
         }
 

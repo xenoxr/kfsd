@@ -292,12 +292,25 @@ async function main() {
 
                 const info = v.getDebugInfo().split('\n');
                 const log = info.length > 1 ? info[info.length - 1].trim().replace('> ', '') : '-';
+
+                // Build status flags
+                let status = [];
+                if (v.isOvertaking) status.push('OT');
+                if (v.isReversing) status.push('REV');
+                if (v.stuckTimer > 0) status.push(`ST:${v.stuckTimer.toFixed(1)}`);
+                const statusStr = status.length > 0 ? status.join('|') : '-';
+
                 return {
                     id: v.id,
+                    x: v.pos.x.toFixed(0),
+                    y: v.pos.y.toFixed(0),
                     lane: v.currentLaneId,
                     speed: v.speed.toFixed(1),
-                    heading: (v.heading * 180 / Math.PI).toFixed(1) + '°',
-                    action: log.substring(0, 50) + (allEvents.length > 0 ? ' [!]' : '')
+                    heading: (v.heading * 180 / Math.PI).toFixed(0) + '°',
+                    steer: v.currentSteer.toFixed(2),
+                    latOff: v.lateralOffset.toFixed(0),
+                    status: statusStr,
+                    action: log.substring(0, 35)
                 };
             });
 
