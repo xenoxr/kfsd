@@ -150,6 +150,37 @@ async function main() {
 
     spawnPedestriansOnSidewalks();
 
+    // Debug Overlay & Remote Monitor
+    const debugPanel = document.getElementById('debug-panel');
+
+    // Setup WebSocket for Remote CLI Monitoring
+    let ws: WebSocket | null = null;
+    let wsConnected = false;
+
+    function connectWs() {
+        // Use hostname from the browser URL to allow remote connections (e.g., SSH/LAN)
+        const host = window.location.hostname;
+        ws = new WebSocket(`ws://${host}:8081`);
+        ws.onopen = () => {
+            console.log('Connected to CLI Monitor');
+            wsConnected = true;
+        };
+        ws.onclose = () => {
+            wsConnected = false;
+            // Retry after 2s
+            setTimeout(connectWs, 2000);
+        };
+        ws.onerror = () => {
+            // console.warn('CLI Monitor not found (run npm run monitor)');
+        };
+    }
+    connectWs(); // Start connection attempt
+
+    let lastTime = performance.now();
+    let isPaused = false;
+    let latestDebugText = '';
+    let frameCount = 0;
+
     // Input Handling
     const keys: { [key: string]: boolean } = {};
     window.addEventListener('keydown', e => {
@@ -160,10 +191,7 @@ async function main() {
     });
     window.addEventListener('keyup', e => keys[e.key] = false);
 
-    let lastTime = performance.now();
-    let isPaused = false;
-    let latestDebugText = '';
-
+    // Existing copyText function...
     async function copyText(text: string): Promise<boolean> {
         // Prefer async clipboard if available and in secure context
         if (navigator.clipboard && window.isSecureContext) {
@@ -212,6 +240,7 @@ async function main() {
     function loop(now: number) {
         const dt = (now - lastTime) / 1000;
         lastTime = now;
+        frameCount++;
 
         if (!isPaused) {
             // Manual Control for Ego (Override RL)
@@ -225,8 +254,6 @@ async function main() {
             if (keys['ArrowDown']) brake = 1;
 
             // Apply Actions
-            // RLInterface.applyAction(world, 'ego', { steer, throttle, brake }, dt);
-            // Direct for now since we don't have IDs wired perfectly yet
             ego.applyControl(steer, throttle, brake, dt);
 
             // Update World
@@ -237,9 +264,9 @@ async function main() {
         renderer.render(world, ego);
 
         // Debug Overlay
-        const debugPanel = document.getElementById('debug-panel');
         if (debugPanel) {
-            let debugText = `FPS: ${(1 / dt).toFixed(0)}\n`;
+            let debugText = `Time: ${(now / 1000).toFixed(1)}s\n`;
+            debugText += `FPS: ${(1 / dt).toFixed(0)}\n`;
             debugText += `Ego: ${ego.getDebugInfo()}\n\n`;
 
             world.vehicles.forEach(v => {
@@ -251,9 +278,40 @@ async function main() {
             latestDebugText = debugText;
         }
 
-        // Debug Observation
-        // const obs = RLInterface.getObservation(world, 'ego');
-        // console.log(obs);
+        // Send data to CLI Monitor (every 30 frames = 0.5s)
+        if (wsConnected && ws && ws.readyState === WebSocket.OPEN && frameCount % 30 === 0) {
+            // Collect events from checking vehicles
+            const allEvents: string[] = [];
+
+            const vehiclesPayload = world.vehicles.map(v => {
+                // Collect events
+                if (v.events.length > 0) {
+                    allEvents.push(...v.events);
+                    v.events = []; // Clear buffer
+                }
+
+                const info = v.getDebugInfo().split('\n');
+                const log = info.length > 1 ? info[info.length - 1].trim().replace('> ', '') : '-';
+                return {
+                    id: v.id,
+                    lane: v.currentLaneId,
+                    speed: v.speed.toFixed(1),
+                    heading: (v.heading * 180 / Math.PI).toFixed(1) + '°',
+                    action: log.substring(0, 50) + (allEvents.length > 0 ? ' [!]' : '')
+                };
+            });
+
+            const payload = {
+                type: 'status',
+                payload: {
+                    time: now / 1000,
+                    fps: (1 / dt).toFixed(0),
+                    vehicles: vehiclesPayload,
+                    events: allEvents
+                }
+            };
+            ws.send(JSON.stringify(payload));
+        }
 
         requestAnimationFrame(loop);
     }

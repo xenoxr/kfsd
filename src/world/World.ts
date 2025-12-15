@@ -44,6 +44,11 @@ export class World {
             if (!veh.isPlayerControlled) {
                 veh.followLane(this, dt); // AI driving
             }
+
+            // NOTE: Do NOT implement "Invisible Walls" or physics constraints (constrainToLane).
+            // The AI/RL must learn to stay in lane by itself. 
+            // Drifting is allowed; detection logic must handle it.
+
             veh.update(dt); // Physics
 
             // Car-Car collision

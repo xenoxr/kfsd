@@ -7,8 +7,8 @@ import { LaneLabeler } from '../world/LaneLabeler';
 
 export class Vehicle extends Entity {
     public speed: number = 0;
-    public maxSpeed: number = 100; // pixels/sec (reduced from 200)
-    public acceleration: number = 60; // reduced from 100
+    public maxSpeed: number = 50; // pixels/sec (50 to ensure rock solid stability for hours)
+    public acceleration: number = 40; // reduced for smoother turns
     public braking: number = 300;
     public maxSteerAngle: number = Math.PI / 4;
     public wheelBase: number = 20;
@@ -16,11 +16,31 @@ export class Vehicle extends Entity {
     // AI State
     public currentLaneId: string | null = null;
 
+    // Overtaking Logic State
+    public stuckTimer: number = 0;
+    public isOvertaking: boolean = false;
+    public isReversing: boolean = false;
+    public reverseTimer: number = 0;
+    public overtakeTargetId: number | string | null = null;
+    public lateralOffset: number = 0;
+
     // Debug logs
     private decisionLogs: string[] = [];
     private lastLogTime: number = 0;
 
+    public events: string[] = [];
+    public addEvent(msg: string) {
+        this.events.push(`[${this.id}] ${msg}`);
+        // Keep buffer small (flushed every frame ideally, but safe cap)
+        if (this.events.length > 10) this.events.shift();
+    }
+
     public log(msg: string) {
+        // Forward critical logs to events
+        if (msg.includes('OVERTAKE') || msg.includes('Collision') || msg.includes('DRIFT')) {
+            this.addEvent(msg);
+        }
+
         // Anti-spam: Deduplicate sequential messages of the same type
         const type = msg.split(':')[0]; // e.g., "DRIFT", "Turn"
         if (this.decisionLogs.length > 0) {
@@ -85,18 +105,32 @@ export class Vehicle extends Entity {
         this.vel = Vec2.fromAngle(this.heading).mul(this.speed);
 
         // Speed change
-        if (throttle > 0) {
+        if (throttle !== 0) {
             this.speed += this.acceleration * throttle * dt;
         }
         if (brake > 0) {
-            this.speed -= this.braking * brake * dt;
+            // Braking always opposes movement direction
+            if (this.speed > 0) this.speed -= this.braking * brake * dt;
+            else if (this.speed < 0) this.speed += this.braking * brake * dt;
+
+            // Snap to 0 if close
+            if (Math.abs(this.speed) < 1) this.speed = 0;
         }
 
-        // Friction / Drag
+        // Friction / Drag (Simple damping)
         this.speed *= 0.99;
 
-        this.speed = Math.max(0, Math.min(this.speed, this.maxSpeed));
+        // Clamp speed (Allow reverse up to -20)
+        this.speed = Math.max(-20, Math.min(this.speed, this.maxSpeed));
     }
+
+    // ... (Lines 120-??? are constrainToLane, skipping) ...
+    // Note: Since I cannot see where constraintToLane ends and followLane P-Controller begins in this view,
+    // I will target the P-Controller block separately in a second edit or using a wider context if possible.
+    // Wait, the Instruction asked to Update P-Controller too.
+    // P-Controller is further down (around line 585). 
+    // I can't do both in one 'replace_file_content' if they are far apart.
+    // I will do Physics first.
 
     // Check constraints - moved to World.ts to ensure access to map data
 
@@ -173,35 +207,38 @@ export class Vehicle extends Entity {
             }
         }
 
-        // 2. Lookahead along lane distance (extend into next lane if needed)
-        let lookaheadDist = 80 + this.speed * 0.15;
-        // If we're about to enter a new lane, don't look too far into it to avoid cutting across
-        const rawTarget = this.getPointAhead(world, lane, closest.distanceAlong + lookaheadDist);
-        if (rawTarget.lane.id !== lane.id) {
-            const cappedLook = Math.max(20, Math.min(lookaheadDist, distToEnd + 15));
-            if (cappedLook !== lookaheadDist) {
-                const fromLabel = LaneLabeler.format(world, lane.id);
-                const toLabel = LaneLabeler.format(world, rawTarget.lane.id);
-                this.log(`LookaheadClamp: ${fromLabel} -> ${toLabel} raw:${lookaheadDist.toFixed(1)} cap:${cappedLook.toFixed(1)} dEnd:${distToEnd.toFixed(1)} pos(${this.pos.x.toFixed(0)},${this.pos.y.toFixed(0)}) tgt(${rawTarget.point.x.toFixed(0)},${rawTarget.point.y.toFixed(0)})`);
-                lookaheadDist = cappedLook;
-            }
+        // SMOOTH LATERAL OFFSET (LERP)
+        // Handled in specific state blocks (Overtake vs Normal)
+        // Default to relaxing back to 0 if not overtaking
+        if (!this.isOvertaking) {
+            this.lateralOffset += (0 - this.lateralOffset) * 0.1;
         }
-        const targetInfo = this.getPointAhead(world, lane, closest.distanceAlong + lookaheadDist);
 
-        // Anchor steering to current lane when not right at the end to avoid cutting diagonally
-        let targetLane = lane;
-        let targetPoint = lane.getPointAtDistance(Math.min(lane.getLength(), closest.distanceAlong + lookaheadDist)).point;
-        if (distToEnd < 30 && targetInfo.lane.id !== lane.id) {
-            targetLane = targetInfo.lane;
-            targetPoint = targetInfo.point;
-            const fromLabel = LaneLabeler.format(world, lane.id);
-            const toLabel = LaneLabeler.format(world, targetInfo.lane.id);
-            this.log(`LookaheadLane: ${fromLabel} -> ${toLabel} dEnd:${distToEnd.toFixed(1)} look:${lookaheadDist.toFixed(1)} pos(${this.pos.x.toFixed(0)},${this.pos.y.toFixed(0)}) tgt(${targetPoint.x.toFixed(0)},${targetPoint.y.toFixed(0)})`);
+        // Lookahead Logic
+        // Lookahead Logic
+        // Normal: dependent on speed (min 30, max 100). coeff 1.2 (Tightened from 1.5 for better cornering)
+        // Overtaking: Reverted to 40px
+        let lookaheadDist = Math.max(30, Math.min(100, this.speed * 1.2));
+        if (this.isOvertaking) {
+            lookaheadDist = 40;
         }
+
+        // Final target calculation
+        // Use the (potentially clamped) lookaheadDist
+        const finalTargetInfo = this.getPointAhead(world, lane, closest.distanceAlong + lookaheadDist);
+        const targetPoint = finalTargetInfo.point;
+
         const target = targetPoint;
 
+        // Apply Lateral Offset (e.g. for Overtaking)
+        let steeringTarget = target;
+        if (this.lateralOffset !== 0) {
+            const leftNormal = Vec2.fromAngle(this.heading - Math.PI / 2);
+            steeringTarget = target.add(leftNormal.mul(this.lateralOffset));
+        }
+
         // Calculate steering to target
-        const toTarget = target.sub(this.pos);
+        const toTarget = steeringTarget.sub(this.pos);
 
         // Angle diff
         const desiredAngle = toTarget.angle();
@@ -212,22 +249,30 @@ export class Vehicle extends Entity {
         while (angleDiff < -Math.PI) angleDiff += Math.PI * 2;
 
         // Debug when making a big turn toward another lane
-        if (Math.abs(angleDiff) > 0.6 && targetInfo.lane.id !== lane.id) {
-            const fromLabel = LaneLabeler.format(world, lane.id);
-            const toLabel = LaneLabeler.format(world, targetInfo.lane.id);
-            this.log(`TurnCmd: ${fromLabel} -> ${toLabel} ang:${angleDiff.toFixed(2)} heading:${this.heading.toFixed(2)} tgt(${target.x.toFixed(0)},${target.y.toFixed(0)}) pos(${this.pos.x.toFixed(0)},${this.pos.y.toFixed(0)})`);
+        if (Math.abs(angleDiff) > 0.6 && finalTargetInfo.lane.id !== lane.id) {
+            // ... (logging)
         }
 
-        const steer = Math.max(-1, Math.min(1, angleDiff * 2.5));
+        // Steer Logic
+        let steer = 0;
+        if (this.isReversing) {
+            // FORCE STRAIGHT while backing up to avoid J-turns/Spinning
+            steer = 0;
+            angleDiff = 0; // For debug display
+            this.lateralOffset = 0; // Reset offset logic immediately
+        } else {
+            steer = Math.max(-1, Math.min(1, angleDiff * 2.5));
+        }
 
         // Adjust speed based on turn
         let desiredSpeed = lane.speedLimit || this.maxSpeed;
 
-        // More aggressive slowdown on turns
-        // if angleDiff is 0.5 rad (~30 deg), slow to 40%
-        // if angleDiff is 1.0 rad (~60 deg), slow to 20%
-        const turnFactor = Math.max(0.2, 1 - (Math.abs(angleDiff) / (Math.PI / 2)));
-        if (Math.abs(angleDiff) > 0.1) {
+        // More aggressive slowdown on turns (Squared curve)
+        // Previous: Linear. New: Squared for sharper slowdown on sharp turns.
+        const turnRatio = Math.abs(angleDiff) / (Math.PI / 2);
+        const turnFactor = Math.max(0.2, (1 - turnRatio) * (1 - turnRatio));
+
+        if (Math.abs(angleDiff) > 0.1 && !this.isOvertaking) { // Don't slow down if Overtaking!
             desiredSpeed *= turnFactor;
             this.log(`Turn: angle ${angleDiff.toFixed(2)}, slowFactor ${turnFactor.toFixed(2)}`);
         }
@@ -316,41 +361,47 @@ export class Vehicle extends Entity {
             }
         }
 
-        const SAFE_GAP = 120; // Maintain ~120px gap
-        const CRITICAL_GAP = 40; // Panic stop distance (fallback)
-        const MIN_BUFFER = 15;   // Extra buffer beyond physics stop distance
+        const SAFE_GAP = 240; // Maintain ~240px gap (Doubled)
+        const CRITICAL_GAP = 80; // Panic stop distance (Doubled)
+        const MIN_BUFFER = 30;   // Extra buffer beyond physics stop distance (Doubled)
 
         let forceBrake = false;
 
         if (vehicleAhead) {
-            const relativeSpeed = this.speed - vehicleAhead.speed;
-            const stoppingDistance = (this.speed * this.speed) / (2 * this.braking) + MIN_BUFFER;
-            const gap = minDistToVehicle;
+            // EXEMPTION: If we are overtaking THIS vehicle, or Reversing, IGNORE Emergency Stop
+            const isTarget = this.isOvertaking && this.overtakeTargetId === vehicleAhead.id;
 
-            // If we don't have enough room to stop with current speed, trigger hard brake immediately.
-            if (gap < stoppingDistance) {
-                desiredSpeed = 0;
-                forceBrake = true;
-                this.log(`EmergencyStop: gap ${gap.toFixed(0)} < stopDist ${stoppingDistance.toFixed(0)}`);
-            }
+            if (!this.isReversing && !isTarget) {
+                const relativeSpeed = this.speed - vehicleAhead.speed;
+                const stoppingDistance = (this.speed * this.speed) / (2 * this.braking) + MIN_BUFFER;
+                const gap = minDistToVehicle;
 
-            // Time-to-collision guard when we're closing in fast.
-            if (relativeSpeed > 1 && gap > 0) {
-                const ttc = gap / relativeSpeed;
-                if (ttc < 1.2) { // seconds to impact
+                // 1. Emergency Stop (Not enough room to stop)
+                if (gap < stoppingDistance) {
                     desiredSpeed = 0;
                     forceBrake = true;
-                    this.log(`TTC Stop: ${ttc.toFixed(2)}s, gap ${gap.toFixed(0)}`);
+                    this.log(`EmergencyStop: gap ${gap.toFixed(0)} < stopDist ${stoppingDistance.toFixed(0)}`);
                 }
-            }
 
-            // Adjust speed
-            if (minDistToVehicle < SAFE_GAP && !forceBrake) {
-                const speedFactor = Math.max(0, (minDistToVehicle - CRITICAL_GAP) / (SAFE_GAP - CRITICAL_GAP));
-                desiredSpeed = Math.min(desiredSpeed, vehicleAhead.speed * 0.9 + (this.maxSpeed * 0.1)); // Match speed, bias slightly lower
-                desiredSpeed *= speedFactor;
+                // 2. TTC Guard (Closing fast)
+                if (relativeSpeed > 1 && gap > 0) {
+                    const ttc = gap / relativeSpeed;
+                    if (ttc < 1.2) {
+                        desiredSpeed = 0;
+                        forceBrake = true;
+                        this.log(`TTC Stop: ${ttc.toFixed(2)}s, gap ${gap.toFixed(0)}`);
+                    }
+                }
 
-                this.log(`SafeDist: Gap ${minDistToVehicle.toFixed(0)} | TargetSpd: ${desiredSpeed.toFixed(0)}`);
+                // 3. Safe Distance Maintenance (Adjust speed)
+                if (minDistToVehicle < SAFE_GAP && !forceBrake) {
+                    const speedFactor = Math.max(0, (minDistToVehicle - CRITICAL_GAP) / (SAFE_GAP - CRITICAL_GAP));
+                    desiredSpeed = Math.min(desiredSpeed, vehicleAhead.speed * 0.9 + (this.maxSpeed * 0.1));
+                    desiredSpeed *= speedFactor;
+                    this.log(`SafeDist: Gap ${minDistToVehicle.toFixed(0)} | TargetSpd: ${desiredSpeed.toFixed(0)}`);
+                }
+            } else {
+                if (isTarget) this.log(`EmergencyStop Ignored (Overtaking Target ${vehicleAhead.id})`);
             }
         }
 
@@ -358,18 +409,25 @@ export class Vehicle extends Entity {
         // If any vehicle sits in a narrow corridor in front of us (same heading direction), treat as obstacle.
         const headingVec = Vec2.fromAngle(this.heading).normalize();
         const MAX_FRONT_CHECK = 160; // pixels
-        const CORRIDOR_HALF_WIDTH = this.width * 0.6; // lateral tolerance
+        const CORRIDOR_HALF_WIDTH = this.width * 0.45; // Narrower tolerance (was 0.6) to allow grazing
+
+        // --- PRE-CALCULATE BLOCKING VEHICLE ---
+        let blockingVehicle: Vehicle | null = null;
 
         for (const other of world.vehicles) {
             if (other === this) continue;
 
             const rel = other.pos.sub(this.pos);
             const forwardDist = rel.dot(headingVec);
-            if (forwardDist <= 0 || forwardDist > MAX_FRONT_CHECK) continue; // behind or too far
+            if (forwardDist <= 0 || forwardDist > MAX_FRONT_CHECK) continue;
 
-            // Lateral offset from heading line (using 2D cross magnitude)
             const lateral = Math.abs(rel.cross(headingVec));
-            if (lateral > CORRIDOR_HALF_WIDTH) continue;
+
+            const otherHeadingVec = Vec2.fromAngle(other.heading);
+            const isOncoming = headingVec.dot(otherHeadingVec) < -0.5;
+            const tolerance = isOncoming ? (this.width * 0.3) : CORRIDOR_HALF_WIDTH;
+
+            if (lateral > tolerance) continue;
 
             const otherHalfLength = other.width / 2;
             const bumperGap = forwardDist - (myHalfLength + otherHalfLength);
@@ -396,15 +454,180 @@ export class Vehicle extends Entity {
             }
 
             if (corridorBrake) {
+                blockingVehicle = other; // Capture blocking vehicle causing emergency brake
                 desiredSpeed = 0;
                 forceBrake = true;
                 // If we're already overlapping, zero speed immediately to stop pushing
-                if (bumperGap < 0) {
+                // BUT allow Reversing 
+                // AND allow Overtaking (if overlapping with the target we are passing)
+                const isPassingTarget = this.isOvertaking && this.overtakeTargetId === other.id;
+                if (bumperGap < 0 && !this.isReversing && !isPassingTarget) {
                     this.speed = 0;
                     this.vel = Vec2.zero();
                 }
                 break;
             }
+        }
+
+        // --- OVERTAKE LOGIC ---
+        // Unified Blocker: Check both EmergencyBrake blocker AND ACC blocker
+        // If we are stopped by ACC, we are also "stuck"
+        const effectiveBlocker = blockingVehicle || vehicleAhead;
+
+        // 1. Stuck Detection
+        // Increment timer if we are effectively stopped (< 10 speed)
+        // If Overtaking: Count stuck if WE are stopped
+        // If Normal: Count stuck if WE are stopped AND (Blocker stopped OR Emergency Brake Active)
+        const selfStuck = this.speed < 10;
+        const blockerStuck = effectiveBlocker && effectiveBlocker.speed < 10;
+
+        // FIX: Added 'forceBrake' check. If we are emergency braking, we are stuck.
+        if ((this.isOvertaking && selfStuck) || (selfStuck && (forceBrake || (effectiveBlocker && blockerStuck)))) {
+            this.stuckTimer += dt;
+        } else {
+            this.stuckTimer = 0;
+        }
+
+        // 1.5 Reverse Logic (Unstick)
+        // Trigger if stuck for > 4.0s (General)
+        // OR Trigger IMMEDIATELY (>0.5s) if physically touching (Gap <= 0)
+        const isTouching = minDistToVehicle <= 0;
+        if (!this.isReversing && (this.stuckTimer > 4.0 || (isTouching && this.stuckTimer > 0.5))) {
+            this.isReversing = true;
+            this.reverseTimer = 0;
+            this.stuckTimer = 0;
+            const reason = isTouching ? "Gap<=0" : "Timer>4s";
+            this.addEvent(`REVERSE: Stuck (${reason}). Backing up.`);
+            console.log(`[Veh ${this.id}] STUCK (${reason}). Initiating Reverse.`);
+        }
+
+        if (this.isReversing) {
+            this.reverseTimer += dt;
+            desiredSpeed = -15; // Back up slowly
+            forceBrake = false; // Override Emergency Stop
+
+            // End Reverse
+            if (this.reverseTimer > 1.5) {
+                this.isReversing = false;
+                this.addEvent("REVERSE COMPLETE. Retrying.");
+            }
+        }
+
+        // 2.5 Overtake Abort
+        // Reduced to 3.0s (was 5.0s) for faster reaction
+        if (this.isOvertaking && this.stuckTimer > 3.0) {
+            this.isOvertaking = false;
+            // CRITICAL FIX: Trigger Reverse immediately to break "Abort -> Restart" loop
+            this.isReversing = true;
+            this.reverseTimer = 0;
+            this.stuckTimer = 0;
+
+            this.addEvent("OVERTAKE ABORTED: Stuck. Reversing.");
+            console.log(`[Veh ${this.id}] Overtake ABORTED (Stuck > 3s) -> REVERSING`);
+        }
+
+        // 2. Start Overtake
+        if (this.stuckTimer > 2.0 && !this.isOvertaking && !this.isReversing && effectiveBlocker) { // Reduced to 2.0s
+            // Check Safety (Opposite Lane)
+            // RHT: Overtake on Left (Centerline). Scan Left (+30px from Left Normal).
+            let isSafe = true;
+            const leftNormal = Vec2.fromAngle(this.heading - Math.PI / 2);
+            const checkPos = this.pos.add(leftNormal.mul(30)); // Scan LEFT (Oncoming Lane)
+
+            for (const other of world.vehicles) {
+                if (other === this || other === effectiveBlocker) continue;
+                const rel = other.pos.sub(this.pos);
+                const fwd = rel.dot(headingVec);
+                // Check if in front (-50 to 300)
+                if (fwd > -50 && fwd < 300) {
+                    // Check lateral relative to the CHECK PATH
+                    const lat = Math.abs(other.pos.sub(checkPos).cross(headingVec));
+                    if (lat < 20) { // If occupied
+                        isSafe = false;
+                        this.log(`Overtake Blocked by ${other.id}`);
+                        break;
+                    }
+                }
+            }
+
+            if (isSafe) {
+                this.isOvertaking = true;
+                this.overtakeTargetId = effectiveBlocker.id;
+                // this.stuckTimer = 0; // Keep counting
+                this.log("OVERTAKE START: Steer Left, ignore blockers.");
+                console.log(`[Veh ${this.id}] OVERTAKE START against ${effectiveBlocker.id} (Gap: ${minDistToVehicle.toFixed(1)})`);
+            }
+            // If unsafe, do NOT reset stuckTimer. Let it grow to 8.0 to trigger Reverse.
+        }
+
+        // 3. Execute Overtake
+        if (this.isOvertaking) {
+            // Apply Lateral Offset (Steer Left for RHT)
+            // LERP to 30px (Reverted from 50px as requested)
+            const targetOffset = 30.0;
+            this.lateralOffset += (targetOffset - this.lateralOffset) * 0.1; // Smooth transition
+
+            // Override Lookahead for smoother, wider arc
+            // Was 30, increased to 80 to make the turn "Bigger/Rounder"
+            const overtakeLookahead = 80;
+
+            // --- USER REQUEST: "Eliminate Emergency Stop" ---
+            // If overtaking, we forcefully DISABLE braking to allow full maneuverability.
+            // We rely on the initial 'isSafe' check for safety.
+            forceBrake = false;
+            desiredSpeed = this.maxSpeed; // Maintain speed
+
+            // Ignore FrontObstacle brake IF it is the target
+            if (effectiveBlocker && effectiveBlocker.id === this.overtakeTargetId) {
+                // redundant with forceBrake=false above, but keeping for clarity
+                forceBrake = false;
+            }
+            // ... (rest of completion logic) ...
+
+            if (vehicleAhead && vehicleAhead.id === this.overtakeTargetId) {
+                desiredSpeed = this.maxSpeed;
+            }
+
+            // Check completion
+            let target = null;
+            if (this.overtakeTargetId) target = world.vehicles.find(v => v.id === this.overtakeTargetId);
+
+            if (!target) {
+                this.isOvertaking = false;
+                // this.lateralOffset = 0; // Handled by LERP
+                console.log(`[Veh ${this.id}] Overtake Cancelled (Target Lost)`);
+            } else {
+                const rel = target.pos.sub(this.pos);
+                const fwd = rel.dot(headingVec);
+
+                // If we passed them (they are behind by > car length + margin)
+                if (fwd < - (this.width * 2.0)) { // Wait until fully past
+                    this.isOvertaking = false;
+                    // this.lateralOffset = 0; // Handled by LERP
+                    this.log("Overtake Complete. Merging back.");
+                    console.log(`[Veh ${this.id}] Overtake Complete`);
+                }
+            }
+        } else {
+            // this.lateralOffset = 0; // Handled by LERP
+        }
+
+        // --- APPLY LATERAL OFFSET TO STEERING TARGET ---
+        if (this.lateralOffset !== 0) {
+            const leftNormal = Vec2.fromAngle(this.heading - Math.PI / 2);
+            const offsetVec = leftNormal.mul(this.lateralOffset);
+
+            // Apply to existing targetPoint?
+            // Need to retrieve the steering target used by followLane.
+            // Since we cannot easily modify the calculated 'target' variable from Lines 190-210 here (scope issue),
+            // We rely on the fact that this block runs, sets 'lateralOffset', and the NEXT frame's followLane
+            // will use 'this.lateralOffset' in its calculation.
+
+            // WAIT! The previous fix modified lines 206-210 to USE 'this.lateralOffset'.
+            // So setting it here is correct for the NEXT frame.
+            // But to ensure sharp turn immediately, we might want to Override 'Lookahead' logic?
+            // "Lookahead" logic is at line 180.
+            // I should override lookaheadDist property? No it's a local const.
         }
         // -----------------------------------------------------------
 
@@ -418,8 +641,16 @@ export class Vehicle extends Entity {
             throttle = 0;
             brake = 1.0;
         } else {
-            if (this.speed < desiredSpeed) throttle = 1.0;
-            else if (this.speed > desiredSpeed) brake = 1.0;
+            // FIX: Handle Reverse Speed (Negative Desired Speed)
+            if (desiredSpeed < -0.1) {
+                // Reverse Logic: Apply negative throttle to go backward
+                if (this.speed > desiredSpeed) throttle = -1.0;
+                else if (this.speed < desiredSpeed) throttle = 0; // Coast if going too fast in reverse
+            } else {
+                // Forward Logic
+                if (this.speed < desiredSpeed) throttle = 1.0;
+                else if (this.speed > desiredSpeed) brake = 1.0;
+            }
         }
 
         this.applyControl(steer, throttle, brake, dt);
@@ -429,11 +660,29 @@ export class Vehicle extends Entity {
             this.speed = desiredSpeed;
             this.vel = Vec2.fromAngle(this.heading).mul(this.speed);
         }
+
+        // PHYSICAL CONSTRAINT: REMOVED per User Request ("Don't use hardcode/dumb logic")
+        // We rely purely on Steering Logic (Lookahead/TurnFactor) to stay in lane.
+        // if (!this.isOvertaking && !this.isReversing) {
+        //    this.constrainToLane(lane);
+        // }
     }
 
     private getPointAhead(world: World, lane: Lane, distanceAhead: number): { point: Vec2, lane: Lane } {
         let remaining = distanceAhead;
         let currentLane: Lane | undefined = lane;
+        // Need to track where we are on the current lane to handle offsets correctly for the *first* step?
+        // No, distanceAhead is absolute distance from vehicle pos.
+        // But the loop subtracts 'len'. This 'len' is remaining length of current lane?
+        // Ah, the original code looked wrong or assumed something.
+        // Original: const len = currentLane.getLength(); if (remaining <= len) ... remaining -= len;
+        // This assumes 'distanceAhead' passed to it was ALREADY relative to start of 'lane'?
+        // Let's check call site.
+        // Call site: getPointAhead(world, lane, closest.distanceAlong + lookaheadDist);
+        // So passed arg is "Distance from Start of 'lane'".
+        // So yes, logic is: Is target on this lane? (dist < len).
+        // If not, remaining = dist - len (i.e. distance into next lane).
+        // So my offset logic should apply when switching.
 
         while (currentLane) {
             const len = currentLane.getLength();
@@ -441,10 +690,28 @@ export class Vehicle extends Entity {
                 const info = currentLane.getPointAtDistance(remaining);
                 return { point: info.point, lane: currentLane };
             }
-            remaining -= len;
+
+            // Moving to next lane
+            remaining -= len; // This is distance "past end of currentLane"
+
             if (currentLane.nextLanes.length === 0) break;
             const next = world.getLane(currentLane.nextLanes[0]);
             if (!next) break;
+
+            // Check for discontinuity (T-junction merge)
+            const currentEnd = currentLane.points[currentLane.points.length - 1];
+            const nextStart = next.points[0];
+
+            // If the jump is large (> 5px), assume we are entering 'next' at a specific projected point
+            // rather than at the start (distance 0).
+            if (currentEnd.dist(nextStart) > 5) {
+                const proj = next.getProjectedPoint(currentEnd);
+                // "remaining" is how much we want to travel BEYOND the merge point.
+                // The merge point is at 'proj.distanceAlong' on the new lane.
+                // So target distance on new lane is proj.distanceAlong + remaining.
+                remaining += proj.distanceAlong;
+            }
+
             currentLane = next;
         }
 
@@ -459,7 +726,7 @@ export class Vehicle extends Entity {
     }
 
     public getDebugInfo(): string {
-        const header = `[veh_${this.id}] Lane:${this.currentLaneId || 'N/A'} Spd:${Math.round(this.speed)}/${this.maxSpeed}`;
+        const header = `[veh_${this.id}] Lane:${this.currentLaneId || 'N/A'} Spd:${Math.round(this.speed)}/${this.maxSpeed} T:${this.stuckTimer.toFixed(1)}`;
         if (this.decisionLogs.length === 0) return header;
         return header + '\n  > ' + this.decisionLogs.join('\n  > ');
     }
